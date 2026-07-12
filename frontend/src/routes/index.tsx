@@ -125,7 +125,7 @@ const AnimatedHeroBackground = () => {
         }}
       />
 
-      <svg className="absolute inset-0 w-full h-full opacity-15">
+      <svg className="absolute inset-0 w-full h-full opacity-15 pointer-events-none">
         {/* Connections */}
         {connections.map((edge, i) => {
           const n1 = allNodes[edge.from];
@@ -148,7 +148,10 @@ const AnimatedHeroBackground = () => {
         })}
 
         {/* Plain nodes */}
-        {plainNodes.map((node) => (
+        {plainNodes.map((node) => {
+          const driftX = 2 - Math.random() * 4; // -2 to +2
+          const driftY = 2 - Math.random() * 4; // -2 to +2
+          return (
           <motion.circle
             key={node.id}
             cx={`${node.x}%`}
@@ -156,8 +159,8 @@ const AnimatedHeroBackground = () => {
             r={node.size}
             fill="color-mix(in oklab, var(--color-primary) 50%, var(--color-accent))"
             animate={{
-              cx: [`${node.x}%`, `${node.x + (Math.random() * 6 - 3)}%`, `${node.x}%`],
-              cy: [`${node.y}%`, `${node.y + (Math.random() * 6 - 3)}%`, `${node.y}%`],
+              cx: [`${node.x}%`, `${node.x + driftX}%`, `${node.x}%`],
+              cy: [`${node.y}%`, `${node.y + driftY}%`, `${node.y}%`],
               opacity: [0.4, 0.8, 0.4],
             }}
             transition={{
@@ -166,7 +169,7 @@ const AnimatedHeroBackground = () => {
               ease: "easeInOut",
             }}
           />
-        ))}
+        );})}
 
         {/* Icon nodes with glow */}
         {iconNodes.map((node, i) => {
@@ -255,7 +258,7 @@ function Index() {
   };
 
   return (
-    <div className="bg-background">
+    <div className="bg-background overflow-x-hidden">
       <section
         className="group relative overflow-hidden border-b border-border/70"
         onMouseMove={handleHeroPointerMove}
@@ -279,7 +282,7 @@ function Index() {
         />
 
         {/* Main content - no right box */}
-        <div className="relative mx-auto w-full max-w-4xl px-4 sm:px-6 lg:px-8 pb-20 sm:pb-28 md:pb-32 pt-16 sm:pt-20 md:pt-24">
+        <div className="relative mx-auto w-full max-w-4xl px-4 sm:px-6 lg:px-8 pb-12 sm:pb-16 md:pb-20 pt-10 sm:pt-14 md:pt-18">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}

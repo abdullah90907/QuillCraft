@@ -28,6 +28,7 @@ export const mockChatGateway: ChatGateway = {
     return {
       reply: `${prefixedReply}${pickMockReply(payload.userMessage)}`,
       confidence: Math.min(99, Math.max(72, 82 + (payload.history.length % 12))),
+      confidenceSource: "ai",
     };
   },
 };

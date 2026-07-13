@@ -111,7 +111,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         rel: "stylesheet",
         href: appCss,
       },
-      { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
     ],
   }),
   shellComponent: RootShell,
@@ -159,59 +159,62 @@ const pageTransition = {
 function AppShell({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useThemeMode();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const isChatPage = pathname === "/chat";
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <header className="sticky top-0 z-40 border-b border-border/70 bg-background/90 backdrop-blur-xl">
-        <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
-          <Link to="/" className="inline-flex items-center gap-2" aria-label="Go to QuillCraft home">
-            <div className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm">
-              <PenLine className="h-4 w-4" />
-            </div>
-            <div>
-              <p className="font-display text-[1.25rem] leading-none">QuillCraft</p>
-              <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Educational AI Studio</p>
-            </div>
-          </Link>
+    <div className={`${isChatPage ? "h-screen overflow-hidden" : "min-h-screen"} bg-background text-foreground`}>
+      {!isChatPage && (
+        <header className="sticky top-0 z-40 border-b border-border/70 bg-background/90 backdrop-blur-xl">
+          <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
+            <Link to="/" className="inline-flex items-center gap-3" aria-label="Go to QuillCraft home">
+              <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 shadow-sm overflow-hidden">
+                <img src="/favicon.svg" alt="QuillCraft" className="h-10 w-10" />
+              </div>
+              <div>
+                <p className="font-display text-[1.35rem] leading-none text-foreground">QuillCraft</p>
+                <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Educational AI Studio</p>
+              </div>
+            </Link>
 
-          <nav className="flex items-center gap-1 rounded-full border border-border/70 bg-card/80 p-1.5 shadow-sm">
-            <Link
-              to="/"
-              className={navLinkClass}
-              activeProps={{ className: cn(navLinkClass, "bg-muted text-foreground shadow-sm") }}
-              inactiveProps={{ className: cn(navLinkClass, "text-muted-foreground hover:text-foreground") }}
-              activeOptions={{ exact: true }}
-            >
-              Home
-            </Link>
-            <Link
-              to="/build"
-              className={navLinkClass}
-              activeProps={{ className: cn(navLinkClass, "bg-muted text-foreground shadow-sm") }}
-              inactiveProps={{ className: cn(navLinkClass, "text-muted-foreground hover:text-foreground") }}
-            >
-              Build
-            </Link>
-            <Link
-              to="/test"
-              className={navLinkClass}
-              activeProps={{ className: cn(navLinkClass, "bg-muted text-foreground shadow-sm") }}
-              inactiveProps={{ className: cn(navLinkClass, "text-muted-foreground hover:text-foreground") }}
-            >
-              Test
-            </Link>
-          </nav>
+            <nav className="flex items-center gap-1 rounded-full border border-border/70 bg-card/80 p-1.5 shadow-sm">
+              <Link
+                to="/"
+                className={navLinkClass}
+                activeProps={{ className: cn(navLinkClass, "bg-muted text-foreground shadow-sm") }}
+                inactiveProps={{ className: cn(navLinkClass, "text-muted-foreground hover:text-foreground") }}
+                activeOptions={{ exact: true }}
+              >
+                Home
+              </Link>
+              <Link
+                to="/build"
+                className={navLinkClass}
+                activeProps={{ className: cn(navLinkClass, "bg-muted text-foreground shadow-sm") }}
+                inactiveProps={{ className: cn(navLinkClass, "text-muted-foreground hover:text-foreground") }}
+              >
+                Build
+              </Link>
+              <Link
+                to="/chat"
+                className={navLinkClass}
+                activeProps={{ className: cn(navLinkClass, "bg-muted text-foreground shadow-sm") }}
+                inactiveProps={{ className: cn(navLinkClass, "text-muted-foreground hover:text-foreground") }}
+              >
+                Chat
+              </Link>
+            </nav>
 
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-            aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-          >
-            {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-          </Button>
-        </div>
-      </header>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+            >
+              {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            </Button>
+          </div>
+        </header>
+      )}
 
       <AnimatePresence mode="wait" initial={false}>
         <motion.main
@@ -220,24 +223,27 @@ function AppShell({ children }: { children: ReactNode }) {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -8 }}
           transition={pageTransition}
+          className={`${isChatPage ? "h-full" : ""}`}
         >
           {children}
         </motion.main>
       </AnimatePresence>
 
-      <footer className="border-t border-border/80 bg-muted/20">
-        <div className="mx-auto flex w-full max-w-6xl flex-col items-center justify-between gap-3 px-4 py-6 sm:flex-row sm:px-6 lg:px-8">
-          <p className="text-sm text-muted-foreground">© {new Date().getFullYear()} QuillCraft</p>
-          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-            <span className="inline-flex items-center gap-1">
-              <BookOpenText className="h-4 w-4" /> Learning-first
-            </span>
-            <span className="inline-flex items-center gap-1">
-              <GraduationCap className="h-4 w-4" /> Thoughtful AI
-            </span>
+      {!isChatPage && (
+        <footer className="border-t border-border/80 bg-muted/20">
+          <div className="mx-auto flex w-full max-w-6xl flex-col items-center justify-between gap-3 px-4 py-6 sm:flex-row sm:px-6 lg:px-8">
+            <p className="text-sm text-muted-foreground">© {new Date().getFullYear()} QuillCraft</p>
+            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+              <span className="inline-flex items-center gap-1">
+                <BookOpenText className="h-4 w-4" /> Learning-first
+              </span>
+              <span className="inline-flex items-center gap-1">
+                <GraduationCap className="h-4 w-4" /> Thoughtful AI
+              </span>
+            </div>
           </div>
-        </div>
-      </footer>
+        </footer>
+      )}
     </div>
   );
 }

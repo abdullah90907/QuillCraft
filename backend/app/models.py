@@ -14,12 +14,18 @@ class CreateBotResponse(BaseModel):
     message: str = Field(..., description="Success message", example="Bot created successfully")
 
 
+class ChatMessage(BaseModel):
+    role: str = Field(..., description="Either 'user' or 'assistant'", example="user")
+    content: str = Field(..., description="Content of the message", example="How do I add fractions?")
+
 class ChatRequest(BaseModel):
     bot_id: str = Field(..., description="Unique identifier of the bot to chat with", example="bot-123")
     message: str = Field(..., description="User's message to the bot", example="How do I add fractions?")
+    history: list[ChatMessage] = Field(default_factory=list, description="Full conversation history prior to current message")
 
 
 class ChatResponse(BaseModel):
     reply: str = Field(..., description="Bot's reply to the user", example="Great question! Let's start with finding a common denominator.")
     confidence: int = Field(..., description="Confidence level of the reply from 0 to 100", example=85)
+    confidence_source: str = Field(..., description="Source of the confidence score: 'ai' or 'fallback_random'", example="ai")
 

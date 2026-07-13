@@ -11,6 +11,7 @@ interface QuillCraftState {
   setMessages: (messages: ChatMessage[]) => void;
   appendMessage: (message: ChatMessage) => void;
   clearMessages: () => void;
+  resetBot: () => void; // New function to reset for creating new bot
 }
 
 const QuillCraftContext = createContext<QuillCraftState | undefined>(undefined);
@@ -31,6 +32,11 @@ export function QuillCraftProvider({ children }: { children: ReactNode }) {
       setMessages: (nextMessages) => setMessagesState(nextMessages),
       appendMessage: (message) => setMessagesState((prev) => [...prev, message]),
       clearMessages: () => setMessagesState([]),
+      resetBot: () => {
+        setBotConfigState(null);
+        setBotIdState(null);
+        setMessagesState([]);
+      },
     }),
     [botConfig, botId, messages],
   );

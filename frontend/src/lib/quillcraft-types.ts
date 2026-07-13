@@ -23,6 +23,7 @@ export interface ChatMessage {
   role: "user" | "assistant";
   content: string;
   confidence?: number;
+  confidenceSource?: "ai" | "fallback_random";
   createdAt: number;
 }
 
@@ -31,14 +32,21 @@ export interface CreateBotResponse {
   message: string;
 }
 
+export interface BackendChatMessage {
+  role: "user" | "assistant";
+  content: string;
+}
+
 export interface BackendChatRequest {
   bot_id: string;
   message: string;
+  history: BackendChatMessage[];
 }
 
 export interface BackendChatResponse {
   reply: string;
-  confidence: string; // Backend returns a string like "Confidence: XX% - ..."
+  confidence: number;
+  confidence_source: "ai" | "fallback_random";
 }
 
 // Legacy types for existing code
@@ -51,4 +59,5 @@ export interface ChatRequest {
 export interface ChatResponse {
   reply: string;
   confidence: number;
+  confidenceSource: "ai" | "fallback_random";
 }

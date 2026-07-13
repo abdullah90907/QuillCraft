@@ -4,8 +4,10 @@ from fastapi.responses import JSONResponse
 from fastapi.exceptions import HTTPException, RequestValidationError
 from dotenv import load_dotenv
 from .routers import bot
+from .services.database import init_db
 
 load_dotenv()
+init_db()
 
 app = FastAPI(title="QuillBot Backend", version="0.1.0")
 

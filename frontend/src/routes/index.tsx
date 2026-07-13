@@ -230,6 +230,37 @@ const features = [
   { icon: Brain, title: "Pedagogy-aware persona design", description: "Craft tutors that balance guidance, rigor, and encouragement for different learner types." },
   { icon: MessageCircleCode, title: "Backend-ready chat contract", description: "Mock today, connect tomorrow. Chat flow is structured for smooth FastAPI `/chat` integration." },
   { icon: Sparkles, title: "Premium learning workspace", description: "Thoughtful UI, calm visual rhythm, and motion that supports clarity rather than distraction." },
+  { icon: Code, title: "Developer-friendly API", description: "Easy to integrate with your existing systems and tools." },
+  { icon: BookOpen, title: "Curriculum alignment", description: "Ensure your tutor adheres to your educational standards and objectives." },
+  { icon: Palette, title: "Customizable design", description: "Match your brand identity with custom themes and colors." }
+];
+
+const testimonials = [
+  {
+    name: "Sarah Chen",
+    role: "High School Math Teacher",
+    quote: "QuillCraft transformed how I create personalized learning experiences. My students love the interactive tutors!",
+    avatar: "S"
+  },
+  {
+    name: "Dr. Michael Torres",
+    role: "University Professor",
+    quote: "The level of control over the AI's behavior is exactly what educators need. Highly recommend!",
+    avatar: "M"
+  },
+  {
+    name: "Emily Rodriguez",
+    role: "Curriculum Designer",
+    quote: "Beautiful interface and powerful features. This is the future of educational technology.",
+    avatar: "E"
+  }
+];
+
+const stats = [
+  { number: "2,500+", label: "Educators" },
+  { number: "10,000+", label: "Tutors Created" },
+  { number: "50+", label: "Subjects" },
+  { number: "98%", label: "Satisfaction Rate" }
 ];
 
 function Index() {
@@ -266,7 +297,7 @@ function Index() {
       >
         <div className="absolute inset-0 bg-hero-gradient opacity-95" aria-hidden />
         
-        {/* New animated background */}
+        {/* Animated background */}
         <AnimatedHeroBackground />
 
         <motion.div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: cursorGlow }} aria-hidden />
@@ -281,8 +312,8 @@ function Index() {
           }}
         />
 
-        {/* Main content - no right box */}
-        <div className="relative mx-auto w-full max-w-4xl px-4 sm:px-6 lg:px-8 pb-12 sm:pb-16 md:pb-20 pt-10 sm:pt-14 md:pt-18">
+        {/* Main hero content - adjusted padding for laptop screens */}
+        <div className="relative mx-auto w-full max-w-4xl px-4 sm:px-6 lg:px-8 pb-12 sm:pb-16 md:pb-20 lg:pb-24 pt-10 sm:pt-14 md:pt-16 lg:pt-20">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
@@ -293,7 +324,7 @@ function Index() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ ...heroTransition, delay: 0.1 }}
-              className="mb-8 inline-flex items-center gap-3 rounded-full border border-primary/30 bg-primary/15 px-6 py-3 shadow-md backdrop-blur-md"
+              className="mb-6 inline-flex items-center gap-3 rounded-full border border-primary/30 bg-primary/15 px-5 py-2.5 shadow-md backdrop-blur-md"
             >
               <motion.span
                 className="h-3 w-3 rounded-full bg-primary"
@@ -309,10 +340,10 @@ function Index() {
               initial={{ opacity: 0, y: 28 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ ...heroTransition, delay: 0.15 }}
-              className="font-display text-4xl sm:text-5xl md:text-6xl leading-[1.05] text-foreground"
+              className="font-display text-3xl sm:text-4xl md:text-5xl leading-[1.05] text-foreground"
             >
               Design AI tutors
-              <span className="block pt-4 bg-gradient-to-r from-primary via-primary/80 to-accent bg-clip-text text-transparent">
+              <span className="block pt-3 bg-gradient-to-r from-primary via-primary/80 to-accent bg-clip-text text-transparent">
                 tailored to your classroom.
               </span>
             </motion.h1>
@@ -321,7 +352,7 @@ function Index() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ ...heroTransition, delay: 0.25 }}
-              className="mt-8 max-w-2xl mx-auto text-base sm:text-lg md:text-xl text-muted-foreground"
+              className="mt-6 max-w-2xl mx-auto text-sm sm:text-base md:text-lg text-muted-foreground"
             >
               QuillCraft gives educators complete control to build, refine, and validate AI tutoring bots with precise personality, tone, and pedagogical style settings.
             </motion.p>
@@ -330,13 +361,13 @@ function Index() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ ...heroTransition, delay: 0.35 }}
-              className="mt-12 flex flex-wrap items-center justify-center gap-4"
+              className="mt-10 flex flex-wrap items-center justify-center gap-4"
             >
               <motion.div whileHover={{ scale: 1.04, y: -3 }} whileTap={{ scale: 0.98 }}>
                 <Button
                   asChild
                   size="lg"
-                  className="h-14 rounded-full px-8 text-base font-semibold shadow-xl bg-primary hover:bg-primary/90 text-primary-foreground transition-all duration-200"
+                  className="h-13 rounded-full px-7 text-base font-semibold shadow-xl bg-primary hover:bg-primary/90 text-primary-foreground transition-all duration-200"
                 >
                   <Link to="/build" className="group cursor-pointer flex items-center gap-2">
                     Start Building
@@ -349,9 +380,9 @@ function Index() {
                   asChild
                   size="lg"
                   variant="outline"
-                  className="h-14 rounded-full px-7 text-base font-semibold border-border/80 bg-background/80 hover:bg-background hover:border-border shadow-md"
+                  className="h-13 rounded-full px-6 text-base font-semibold border-border/80 bg-background/80 hover:bg-background hover:border-border shadow-md"
                 >
-                  <Link to="/test" className="group inline-flex cursor-pointer items-center gap-2">
+                  <Link to="/chat" className="group inline-flex cursor-pointer items-center gap-2">
                     <span>Try Demo</span>
                     <ChevronRight className="h-5 w-5" />
                   </Link>
@@ -363,25 +394,25 @@ function Index() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ ...heroTransition, delay: 0.5 }}
-              className="mt-16 flex items-center justify-center gap-8"
+              className="mt-12 flex items-center justify-center gap-8"
             >
               <div className="flex -space-x-4">
                 {[1, 2, 3, 4, 5].map((i) => (
                   <div
                     key={i}
-                    className="h-12 w-12 rounded-full border-3 border-background bg-primary/20 flex items-center justify-center"
+                    className="h-10 w-10 rounded-full border-3 border-background bg-primary/20 flex items-center justify-center"
                   >
-                    <Users className="h-6 w-6 text-primary" />
+                    <Users className="h-5 w-5 text-primary" />
                   </div>
                 ))}
               </div>
-              <div className="flex flex-col gap-1.5">
-                <div className="flex items-center gap-1.5">
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-1">
                   {[1, 2, 3, 4, 5].map((i) => (
-                    <Star key={i} className="h-5 w-5 fill-primary text-primary" />
+                    <Star key={i} className="h-4 w-4 fill-primary text-primary" />
                   ))}
                 </div>
-                <span className="text-sm font-semibold text-muted-foreground">
+                <span className="text-xs font-semibold text-muted-foreground">
                   Trusted by 2,500+ educators worldwide
                 </span>
               </div>
@@ -390,16 +421,46 @@ function Index() {
         </div>
       </section>
 
-      <section className="mx-auto w-full max-w-6xl px-4 py-16 sm:px-6 md:py-20 lg:px-8">
+      {/* Stats Section */}
+      <section className="border-b border-border/70 bg-muted/30">
+        <div className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+            {stats.map((stat, index) => (
+              <motion.div
+                key={stat.label}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.3 }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+                whileHover={{ y: -5, scale: 1.05 }}
+                className="text-center"
+              >
+                <motion.h3
+                  initial={{ scale: 0.5 }}
+                  whileInView={{ scale: 1 }}
+                  transition={{ type: "spring", stiffness: 100, delay: index * 0.1 }}
+                  className="font-display text-3xl sm:text-4xl text-primary"
+                >
+                  {stat.number}
+                </motion.h3>
+                <p className="text-sm text-muted-foreground mt-2">{stat.label}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* How it works section */}
+      <section className="mx-auto w-full max-w-6xl px-4 py-14 sm:px-6 md:py-18 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.35 }}
           transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-          className="mb-9 text-center"
+          className="mb-8 text-center"
         >
           <h2 className="font-display text-3xl leading-none tracking-tight sm:text-3.5xl md:text-4xl">How it works</h2>
-          <p className="mt-2.5 max-w-2xl mx-auto text-sm text-muted-foreground sm:text-base">
+          <p className="mt-2 max-w-2xl mx-auto text-sm text-muted-foreground sm:text-base">
             Move from idea to validated tutor behavior in three focused steps.
           </p>
         </motion.div>
@@ -408,11 +469,11 @@ function Index() {
           {steps.map((step, index) => (
             <motion.div
               key={step.title}
-              initial={{ opacity: 0, y: 24 }}
-              whileInView={{ opacity: 1, y: 0 }}
+              initial={{ opacity: 0, y: 24, rotate: index % 2 === 0 ? -2 : 2 }}
+              whileInView={{ opacity: 1, y: 0, rotate: 0 }}
               viewport={{ once: true, amount: 0.25 }}
               transition={{ duration: 0.5, delay: index * 0.12, ease: [0.22, 1, 0.36, 1] }}
-              whileHover={{ y: -8 }}
+              whileHover={{ y: -8, rotate: 0, scale: 1.02 }}
             >
               <Card className="h-full border-border/70 bg-card/80 shadow-soft transition-all duration-300 hover:shadow-elevated rounded-3xl">
                 <CardHeader className="space-y-4">
@@ -433,17 +494,18 @@ function Index() {
         </div>
       </section>
 
+      {/* Key features section */}
       <section className="border-t border-border/70 bg-muted/25">
-        <div className="mx-auto w-full max-w-6xl px-4 py-16 sm:px-6 md:py-20 lg:px-8">
+        <div className="mx-auto w-full max-w-6xl px-4 py-14 sm:px-6 md:py-18 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.3 }}
             transition={{ duration: 0.5 }}
-            className="mb-9 text-center"
+            className="mb-8 text-center"
           >
             <h2 className="font-display text-3xl leading-none tracking-tight sm:text-3.5xl md:text-4xl">Key features</h2>
-            <p className="mt-2.5 max-w-2xl mx-auto text-sm text-muted-foreground sm:text-base">
+            <p className="mt-2 max-w-2xl mx-auto text-sm text-muted-foreground sm:text-base">
               Built for educators who want elegance, control, and future-ready architecture.
             </p>
           </motion.div>
@@ -452,17 +514,20 @@ function Index() {
             {features.map((feature, index) => (
               <motion.div
                 key={feature.title}
-                initial={{ opacity: 0, y: 28 }}
-                whileInView={{ opacity: 1, y: 0 }}
+                initial={{ opacity: 0, x: index % 2 === 0 ? -30 : 30 }}
+                whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true, amount: 0.25 }}
-                transition={{ duration: 0.5, delay: index * 0.12 }}
-                whileHover={{ y: -10, scale: 1.02 }}
+                transition={{ duration: 0.5, delay: index * 0.08 }}
+                whileHover={{ y: -10, scale: 1.03 }}
               >
                 <Card className="h-full border-border/70 bg-card shadow-soft transition-all duration-300 hover:shadow-elevated rounded-3xl">
                   <CardHeader className="space-y-4">
-                    <div className="inline-flex h-11 w-11 items-center justify-center rounded-lg bg-accent/15 text-accent">
+                    <motion.div 
+                      whileHover={{ rotate: 10, scale: 1.1 }}
+                      className="inline-flex h-11 w-11 items-center justify-center rounded-lg bg-accent/15 text-accent"
+                    >
                       <feature.icon className="h-6 w-6" />
-                    </div>
+                    </motion.div>
                     <CardTitle className="font-display text-[1.6rem] leading-none">
                       {feature.title}
                     </CardTitle>
@@ -476,6 +541,88 @@ function Index() {
               </motion.div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* Testimonials section */}
+      <section className="border-t border-border/70">
+        <div className="mx-auto w-full max-w-6xl px-4 py-14 sm:px-6 md:py-18 lg:px-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.3 }}
+            transition={{ duration: 0.5 }}
+            className="mb-8 text-center"
+          >
+            <h2 className="font-display text-3xl leading-none tracking-tight sm:text-3.5xl md:text-4xl">What educators say</h2>
+            <p className="mt-2 max-w-2xl mx-auto text-sm text-muted-foreground sm:text-base">
+              Join thousands of satisfied educators using QuillCraft.
+            </p>
+          </motion.div>
+
+          <div className="grid gap-6 md:grid-cols-3">
+            {testimonials.map((testimonial, index) => (
+              <motion.div
+                key={testimonial.name}
+                initial={{ opacity: 0, scale: 0.8 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true, amount: 0.25 }}
+                transition={{ duration: 0.5, delay: index * 0.15, type: "spring" }}
+                whileHover={{ y: -10, scale: 1.02 }}
+              >
+                <Card className="h-full border-border/70 bg-card/80 shadow-soft transition-all duration-300 hover:shadow-elevated rounded-3xl">
+                  <CardContent className="pt-6">
+                    <div className="flex items-center gap-1.5 mb-4">
+                      {[1, 2, 3, 4, 5].map((i) => (
+                        <Star key={i} className="h-4 w-4 fill-primary text-primary" />
+                      ))}
+                    </div>
+                    <p className="text-base leading-relaxed text-foreground mb-6 italic">"{testimonial.quote}"</p>
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-semibold">
+                        {testimonial.avatar}
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-foreground">{testimonial.name}</p>
+                        <p className="text-xs text-muted-foreground">{testimonial.role}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="border-t border-border/70 bg-gradient-to-br from-primary/10 to-accent/10">
+        <div className="mx-auto w-full max-w-4xl px-4 py-16 sm:px-6 lg:px-8 text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 20, scale: 0.9 }}
+            whileInView={{ opacity: 1, y: 0, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, type: "spring" }}
+          >
+            <h2 className="font-display text-3xl sm:text-4xl leading-tight text-foreground mb-4">
+              Ready to transform your classroom?
+            </h2>
+            <p className="text-muted-foreground mb-8 max-w-xl mx-auto">
+              Start building your custom AI tutor today and see the difference in your students' learning.
+            </p>
+            <motion.div whileHover={{ scale: 1.04, y: -3 }} whileTap={{ scale: 0.98 }}>
+              <Button
+                asChild
+                size="lg"
+                className="h-14 rounded-full px-8 text-base font-semibold shadow-xl bg-primary hover:bg-primary/90 text-primary-foreground transition-all duration-200"
+              >
+                <Link to="/build" className="group cursor-pointer flex items-center gap-2 mx-auto">
+                  Get Started for Free
+                  <MoveRight className="h-5 w-5" />
+                </Link>
+              </Button>
+            </motion.div>
+          </motion.div>
         </div>
       </section>
     </div>

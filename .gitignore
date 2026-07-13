@@ -9,6 +9,7 @@ frontend/.nitro
 frontend/*.local
 frontend/.wrangler/
 frontend/.dev.vars
+frontend/.env
 
 # Backend
 backend/__pycache__
@@ -20,6 +21,7 @@ backend/.env
 backend/venv
 backend/env
 backend/.venv
+backend/quillcraft.db
 
 # Editor directories and files
 .vscode/*

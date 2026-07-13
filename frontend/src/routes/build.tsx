@@ -8,6 +8,8 @@ import {
   Rocket,
   Sparkles,
   Zap,
+  Pencil,
+  Plus,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -17,7 +19,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useQuillCraftStore } from "@/lib/quillcraft-store";
-import { createBot } from "@/lib/api";
+import { createBot, updateBot } from "@/lib/api";
 import type { AnswerStyle, BotConfig } from "@/lib/quillcraft-types";
 
 export const Route = createFileRoute("/build")({
@@ -40,8 +42,11 @@ export const Route = createFileRoute("/build")({
 
 function BuildPage() {
   const navigate = useNavigate({ from: "/build" });
-  const { botConfig, setBotConfig, setBotId, clearMessages } =
+  const { botConfig, setBotConfig, setBotId, clearMessages, botId } =
     useQuillCraftStore();
+
+  // Determine if we're in edit mode (if we have a botId and botConfig already)
+  const isEditMode = !!botId && !!botConfig;
 
   const [form, setForm] = useState<BotConfig>(
     botConfig ?? {
@@ -54,7 +59,7 @@ function BuildPage() {
   );
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isCreated, setIsCreated] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const isDisabled =
@@ -71,31 +76,35 @@ function BuildPage() {
     }
 
     setIsSubmitting(true);
-    setIsCreated(false);
+    setIsSuccess(false);
     setError(null);
 
     try {
-      const response = await createBot({
+      const trimmedConfig = {
         ...form,
         botName: form.botName.trim(),
         roleSubject: form.roleSubject.trim(),
         personality: form.personality.trim(),
         rules: form.rules.trim(),
-      });
+      };
 
-      setBotConfig({
-        ...form,
-        botName: form.botName.trim(),
-        roleSubject: form.roleSubject.trim(),
-        personality: form.personality.trim(),
-        rules: form.rules.trim(),
-      });
-      setBotId(response.bot_id);
-      clearMessages();
-      setIsCreated(true);
+      if (isEditMode && botId) {
+        // Edit mode
+        await updateBot(botId, trimmedConfig);
+      } else {
+        // Create mode
+        const response = await createBot(trimmedConfig);
+        setBotId(response.bot_id);
+      }
+
+      setBotConfig(trimmedConfig);
+      if (!isEditMode) {
+        clearMessages();
+      }
+      setIsSuccess(true);
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Failed to create bot. Please try again."
+        err instanceof Error ? err.message : "Failed to save bot. Please try again."
       );
     } finally {
       setIsSubmitting(false);
@@ -103,7 +112,7 @@ function BuildPage() {
   }
 
   return (
-    <div className="relative flex min-h-screen flex-col overflow-hidden bg-background">
+    <div className="relative flex min-h-screen flex-col bg-background">
       {/* Animated Background */}
       <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
         <div className="absolute inset-0 opacity-30">
@@ -155,14 +164,16 @@ function BuildPage() {
           >
             <div className="mb-4 inline-flex items-center gap-3">
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/12 text-primary">
-                <Zap className="h-6 w-6" />
+                {isEditMode ? <Pencil className="h-6 w-6" /> : <Zap className="h-6 w-6" />}
               </div>
               <h1 className="font-display text-4xl sm:text-5xl leading-none tracking-tight text-foreground">
-                Build your learning bot
+                {isEditMode ? "Edit your learning bot" : "Build your learning bot"}
               </h1>
             </div>
             <p className="text-lg sm:text-xl text-muted-foreground">
-              Configure QuillCraft once, then test in conversation and iterate with confidence.
+              {isEditMode 
+                ? "Update your bot's configuration and refine its behavior." 
+                : "Configure QuillCraft once, then test in conversation and iterate with confidence."}
             </p>
           </motion.div>
 
@@ -318,12 +329,12 @@ function BuildPage() {
                       {isSubmitting ? (
                         <>
                           <LoaderCircle className="mr-1.5 h-5 w-5 animate-spin" />
-                          Creating Bot
+                          {isEditMode ? "Updating Bot" : "Creating Bot"}
                         </>
                       ) : (
                         <>
-                          <Rocket className="mr-1.5 h-5 w-5" />
-                          Create Bot
+                          {isEditMode ? <Pencil className="mr-1.5 h-5 w-5" /> : <Rocket className="mr-1.5 h-5 w-5" />}
+                          {isEditMode ? "Update Bot" : "Create Bot"}
                         </>
                       )}
                     </Button>
@@ -333,13 +344,13 @@ function BuildPage() {
                       variant="outline"
                       className="h-12 rounded-full px-6 text-sm font-semibold"
                     >
-                      <Link to="/test">Go to Test</Link>
+                      <Link to="/chat">Go to Chat</Link>
                     </Button>
                   </div>
                 </form>
 
                 {/* Success Message */}
-                {isCreated ? (
+                {isSuccess ? (
                   <motion.div
                     initial={{ opacity: 0, y: 15, scale: 0.96 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -348,7 +359,7 @@ function BuildPage() {
                   >
                     <p className="mb-1.5 inline-flex items-center gap-2 text-base font-semibold text-foreground">
                       <CheckCircle2 className="h-5 w-5 text-accent" />
-                      Bot created successfully!
+                      {isEditMode ? "Bot updated successfully!" : "Bot created successfully!"}
                     </p>
                     <p className="text-sm text-muted-foreground mb-4">
                       Ready to validate responses in the test chat?
@@ -357,9 +368,9 @@ function BuildPage() {
                       type="button"
                       size="lg"
                       className="h-10 rounded-full px-5 text-sm font-semibold"
-                      onClick={() => navigate({ to: "/test" })}
+                      onClick={() => navigate({ to: "/chat" })}
                     >
-                      Continue to Test
+                      Continue to Chat
                     </Button>
                   </motion.div>
                 ) : null}

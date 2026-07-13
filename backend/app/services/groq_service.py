@@ -11,20 +11,19 @@ class GroqService:
         self.model = "llama-3.3-70b-versatile"
         self.client = Groq(api_key=self.api_key)
 
-    async def generate_bot_reply(self, system_prompt: str, user_message: str) -> str:
+    async def generate_bot_reply(self, system_prompt: str, conversation_history: list[dict[str, str]]) -> str:
         try:
+            messages = [{"role": "system", "content": system_prompt}]
+            messages.extend(conversation_history)
             chat_completion = self.client.chat.completions.create(
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_message},
-                ],
+                messages=messages,
                 model=self.model,
             )
             return chat_completion.choices[0].message.content
         except Exception as e:
             raise Exception(f"Error generating bot reply: {str(e)}")
 
-    async def generate_confidence_rating(self, bot_reply: str) -> int:
+    async def generate_confidence_rating(self, bot_reply: str) -> tuple[int, str]:
         print("=== Generating Confidence Rating ===")
         print(f"Bot Reply: {repr(bot_reply)}")
         
@@ -53,17 +52,17 @@ class GroqService:
                 confidence = int(match.group())
                 confidence = max(1, min(100, confidence))  # Clamp to 1-100
                 print(f"AI-generated confidence: {confidence}")
-                return confidence
+                return confidence, "ai"
             else:
                 # Fallback if parsing fails
                 import random
                 confidence = random.randint(75, 95)
                 print(f"Failed to parse AI response, using fallback confidence: {confidence}")
-                return confidence
+                return confidence, "fallback_random"
         except Exception as e:
             print(f"Error generating confidence rating: {str(e)}")
             import random
             confidence = random.randint(75, 95)
             print(f"Using fallback confidence due to error: {confidence}")
-            return confidence
+            return confidence, "fallback_random"
 

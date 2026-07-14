@@ -6,7 +6,7 @@ import type {
   ChatMessage as FrontendChatMessage,
 } from "@/lib/quillcraft-types";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "/api";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000";
 
 // Backend chat response now has confidence as number
 import type { BackendChatResponse as BackendChatResponseType } from "@/lib/quillcraft-types";

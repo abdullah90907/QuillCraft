@@ -21,7 +21,7 @@ export async function createBot(config: BotConfig): Promise<CreateBotResponse> {
     rules: config.rules,
   };
 
-  const response = await fetch(`${API_BASE_URL}/v1/bot`, {
+  const response = await fetch(`${API_BASE_URL}/api/v1/bot`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -38,7 +38,7 @@ export async function createBot(config: BotConfig): Promise<CreateBotResponse> {
 }
 
 export async function getAllBots(): Promise<any[]> {
-  const response = await fetch(`${API_BASE_URL}/v1/bot`);
+  const response = await fetch(`${API_BASE_URL}/api/v1/bot`);
   if (!response.ok) {
     throw new Error("Failed to fetch bots");
   }
@@ -46,7 +46,7 @@ export async function getAllBots(): Promise<any[]> {
 }
 
 export async function getBot(botId: string): Promise<BotConfig> {
-  const response = await fetch(`${API_BASE_URL}/v1/bot/${botId}`);
+  const response = await fetch(`${API_BASE_URL}/api/v1/bot/${botId}`);
   if (!response.ok) {
     throw new Error("Failed to fetch bot");
   }
@@ -54,7 +54,7 @@ export async function getBot(botId: string): Promise<BotConfig> {
 }
 
 export async function getMessagesForBot(botId: string): Promise<any[]> {
-  const response = await fetch(`${API_BASE_URL}/v1/bot/${botId}/messages`);
+  const response = await fetch(`${API_BASE_URL}/api/v1/bot/${botId}/messages`);
   if (!response.ok) {
     throw new Error("Failed to fetch messages");
   }
@@ -62,7 +62,7 @@ export async function getMessagesForBot(botId: string): Promise<any[]> {
 }
 
 export async function clearMessagesForBot(botId: string): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/v1/bot/${botId}/messages`, {
+  const response = await fetch(`${API_BASE_URL}/api/v1/bot/${botId}/messages`, {
     method: "DELETE",
   });
   if (!response.ok) {
@@ -80,7 +80,7 @@ export async function updateBot(botId: string, config: BotConfig): Promise<void>
     rules: config.rules,
   };
 
-  const response = await fetch(`${API_BASE_URL}/v1/bot/${botId}`, {
+  const response = await fetch(`${API_BASE_URL}/api/v1/bot/${botId}`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
@@ -95,7 +95,7 @@ export async function updateBot(botId: string, config: BotConfig): Promise<void>
 }
 
 export async function deleteBot(botId: string): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/v1/bot/${botId}`, {
+  const response = await fetch(`${API_BASE_URL}/api/v1/bot/${botId}`, {
     method: "DELETE",
   });
   if (!response.ok) {
@@ -103,9 +103,13 @@ export async function deleteBot(botId: string): Promise<void> {
   }
 }
 
-export async function sendChatMessage(botId: string, message: string, history: FrontendChatMessage[]): Promise<{ reply: string; confidence: number; confidenceSource: "ai" | "fallback_random" }> {
+export async function sendChatMessage(
+  botId: string,
+  message: string,
+  history: FrontendChatMessage[]
+): Promise<{ reply: string; confidence: number; confidenceSource: "ai" | "fallback_random" }> {
   // Convert frontend history to backend format
-  const backendHistory = history.map(msg => ({
+  const backendHistory = history.map((msg) => ({
     role: msg.role,
     content: msg.content,
   }));
@@ -116,7 +120,7 @@ export async function sendChatMessage(botId: string, message: string, history: F
     history: backendHistory,
   };
 
-  const response = await fetch(`${API_BASE_URL}/v1/bot/chat`, {
+  const response = await fetch(`${API_BASE_URL}/api/v1/bot/chat`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

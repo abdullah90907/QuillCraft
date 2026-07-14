@@ -1,6 +1,6 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { motion } from "framer-motion";
-import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
+import { Link, createFileRoute } from "@tanstack/react-router";
 import {
   AlertCircle,
   CheckCircle2,
@@ -22,6 +22,14 @@ import { useQuillCraftStore } from "@/lib/quillcraft-store";
 import { createBot, updateBot } from "@/lib/api";
 import type { AnswerStyle, BotConfig } from "@/lib/quillcraft-types";
 
+const emptyBotForm: BotConfig = {
+  botName: "",
+  roleSubject: "",
+  personality: "",
+  answerStyle: "hints-first",
+  rules: "",
+};
+
 export const Route = createFileRoute("/build")({
   head: () => ({
     meta: [
@@ -41,22 +49,20 @@ export const Route = createFileRoute("/build")({
 });
 
 function BuildPage() {
-  const navigate = useNavigate({ from: "/build" });
   const { botConfig, setBotConfig, setBotId, clearMessages, botId } =
     useQuillCraftStore();
 
-  // Determine if we're in edit mode (if we have a botId and botConfig already)
-  const isEditMode = !!botId && !!botConfig;
+  const isEditMode =
+    typeof window !== "undefined" &&
+    new URLSearchParams(window.location.search).get("mode") === "edit" &&
+    !!botId &&
+    !!botConfig;
 
-  const [form, setForm] = useState<BotConfig>(
-    botConfig ?? {
-      botName: "",
-      roleSubject: "",
-      personality: "",
-      answerStyle: "hints-first",
-      rules: "",
-    }
-  );
+  const [form, setForm] = useState<BotConfig>(emptyBotForm);
+
+  useEffect(() => {
+    setForm(isEditMode && botConfig ? botConfig : emptyBotForm);
+  }, [botConfig, isEditMode]);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -365,12 +371,12 @@ function BuildPage() {
                       Ready to validate responses in the test chat?
                     </p>
                     <Button
+                      asChild
                       type="button"
                       size="lg"
                       className="h-10 rounded-full px-5 text-sm font-semibold"
-                      onClick={() => navigate({ to: "/chat" })}
                     >
-                      Continue to Chat
+                      <Link to="/chat">Continue to Chat</Link>
                     </Button>
                   </motion.div>
                 ) : null}

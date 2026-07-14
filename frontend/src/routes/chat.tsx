@@ -19,7 +19,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { sendChatMessage, getAllBots, getMessagesForBot, clearMessagesForBot, deleteBot } from "@/lib/api";
+import { backendAnswerStyleToFrontend, sendChatMessage, getAllBots, getMessagesForBot, clearMessagesForBot, deleteBot } from "@/lib/api";
 import { useQuillCraftStore } from "@/lib/quillcraft-store";
 import type { ChatMessage } from "@/lib/quillcraft-types";
 
@@ -57,6 +57,11 @@ function ChatPage() {
   const [selectMode, setSelectMode] = useState(false);
   const [selectedBotIds, setSelectedBotIds] = useState<Set<string>>(new Set());
 
+  const handleCreateNewBot = () => {
+    resetBot();
+    navigate({ to: "/build" });
+  };
+
   // Scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -87,7 +92,7 @@ function ChatPage() {
       botName: botData.name,
       roleSubject: botData.role,
       personality: botData.personality,
-      answerStyle: botData.answer_style,
+      answerStyle: backendAnswerStyleToFrontend(botData.answer_style),
       rules: botData.rules,
     });
     setSendError(null);
@@ -271,7 +276,7 @@ function ChatPage() {
               <Button
                 size="lg"
                 className="h-12 rounded-full px-7 text-sm font-semibold"
-                onClick={() => navigate({ to: "/build" })}
+                onClick={handleCreateNewBot}
               >
                 <Plus className="mr-2 h-5 w-5" />
                 Create New Bot
@@ -336,7 +341,7 @@ function ChatPage() {
                         size="sm"
                         className="w-full h-10 rounded-full text-sm font-semibold"
                       >
-                        <Link to="/build" className="flex items-center justify-center gap-2">
+                        <Link to="/build" onClick={handleCreateNewBot} className="flex items-center justify-center gap-2">
                           <Plus className="h-4 w-4" />
                           Create New Bot
                         </Link>
@@ -544,7 +549,7 @@ function ChatPage() {
               size="sm"
               className="h-10 rounded-full text-xs font-semibold"
             >
-              <Link to="/build" className="flex items-center gap-2">
+              <Link to="/build?mode=edit" className="flex items-center gap-2">
                 <ArrowLeft className="h-4 w-4" />
                 Edit Bot
               </Link>

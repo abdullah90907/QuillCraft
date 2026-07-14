@@ -1,4 +1,5 @@
 import type {
+  AnswerStyle,
   BotConfig,
   BackendBotConfig,
   CreateBotResponse,
@@ -11,13 +12,21 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000
 // Backend chat response now has confidence as number
 import type { BackendChatResponse as BackendChatResponseType } from "@/lib/quillcraft-types";
 
+export function backendAnswerStyleToFrontend(answerStyle: string | undefined | null): AnswerStyle {
+  return answerStyle === "hints" ? "hints-first" : "direct-answers";
+}
+
+export function frontendAnswerStyleToBackend(answerStyle: AnswerStyle): "hints" | "direct" {
+  return answerStyle === "hints-first" ? "hints" : "direct";
+}
+
 export async function createBot(config: BotConfig): Promise<CreateBotResponse> {
   // Convert frontend config to backend format
   const backendConfig: BackendBotConfig = {
     name: config.botName,
     role: config.roleSubject,
     personality: config.personality,
-    answer_style: config.answerStyle === "hints-first" ? "hints" : "direct",
+    answer_style: frontendAnswerStyleToBackend(config.answerStyle),
     rules: config.rules,
   };
 
@@ -50,7 +59,14 @@ export async function getBot(botId: string): Promise<BotConfig> {
   if (!response.ok) {
     throw new Error("Failed to fetch bot");
   }
-  return response.json();
+  const botData = await response.json();
+  return {
+    botName: botData.name,
+    roleSubject: botData.role,
+    personality: botData.personality,
+    answerStyle: backendAnswerStyleToFrontend(botData.answer_style),
+    rules: botData.rules,
+  };
 }
 
 export async function getMessagesForBot(botId: string): Promise<any[]> {
@@ -76,7 +92,7 @@ export async function updateBot(botId: string, config: BotConfig): Promise<void>
     name: config.botName,
     role: config.roleSubject,
     personality: config.personality,
-    answer_style: config.answerStyle === "hints-first" ? "hints" : "direct",
+    answer_style: frontendAnswerStyleToBackend(config.answerStyle),
     rules: config.rules,
   };
 

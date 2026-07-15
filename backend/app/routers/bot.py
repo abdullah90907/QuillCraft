@@ -98,7 +98,11 @@ async def chat(request: ChatRequest):
         conversation_history.append({"role": "user", "content": request.message})
         
         reply = await groq_service.generate_bot_reply(system_prompt, conversation_history)
-        confidence, confidence_source = await groq_service.generate_confidence_rating(reply)
+        confidence, confidence_source = await groq_service.generate_confidence_rating(
+            reply,
+            system_prompt,
+            request.message,
+        )
         print("Bot Reply:", reply)
         print("Confidence:", confidence)
         print("Confidence Source:", confidence_source)

@@ -23,21 +23,35 @@ class GroqService:
         except Exception as e:
             raise Exception(f"Error generating bot reply: {str(e)}")
 
-    async def generate_confidence_rating(self, bot_reply: str) -> tuple[int, str]:
+    async def generate_confidence_rating(
+        self,
+        bot_reply: str,
+        system_prompt: str,
+        user_message: str,
+    ) -> tuple[int, str]:
         print("=== Generating Confidence Rating ===")
         print(f"Bot Reply: {repr(bot_reply)}")
         
         try:
-            # Ask AI to evaluate confidence in the reply
             chat_completion = self.client.chat.completions.create(
                 messages=[
                     {
                         "role": "system",
-                        "content": "You are a confidence evaluator. Given an AI-generated educational response, return ONLY a single integer between 1 and 100 representing your confidence in the accuracy and helpfulness of that response. No other text.",
+                        "content": (
+                            "You are a confidence evaluator. Given a bot's role description, the user's message, and the bot's reply, "
+                            "return ONLY a single integer between 1 and 100 representing your confidence in the reply. "
+                            "Judge honestly based on whether the reply is grounded in the bot's stated domain, whether it appears accurate, "
+                            "and whether the reply itself signals reduced certainty. If the topic is outside the bot's domain or the answer is a broad guess, "
+                            "score it noticeably lower. No other text."
+                        ),
                     },
                     {
                         "role": "user",
-                        "content": f"Evaluate the confidence for this response: {bot_reply}",
+                        "content": (
+                            f"Bot role prompt:\n{system_prompt}\n\n"
+                            f"User message:\n{user_message}\n\n"
+                            f"Bot reply:\n{bot_reply}"
+                        ),
                     },
                 ],
                 model=self.model,

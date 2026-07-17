@@ -10,7 +10,7 @@ import {
 } from "@tanstack/react-router";
 import { useEffect, useState, type ReactNode } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { BookOpenText, GraduationCap, Moon, PenLine, Sun } from "lucide-react";
+import { BookOpenText, ExternalLink, GraduationCap, Github, Globe, Linkedin, Moon, PenLine, Sun } from "lucide-react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
@@ -156,6 +156,24 @@ const pageTransition = {
   ease: [0.22, 1, 0.36, 1] as const,
 };
 
+const socialLinks = [
+  {
+    label: "GitHub",
+    href: "https://github.com/abdullah90907/QuillCraft",
+    icon: Github,
+  },
+  {
+    label: "LinkedIn",
+    href: "https://www.linkedin.com/in/mr-abdullah-siddique/",
+    icon: Linkedin,
+  },
+  {
+    label: "Website",
+    href: "https://abdullahsiddique.co.uk",
+    icon: Globe,
+  },
+];
+
 function AppShell({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useThemeMode();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
@@ -231,9 +249,34 @@ function AppShell({ children }: { children: ReactNode }) {
 
       {!isChatPage && (
         <footer className="border-t border-border/80 bg-muted/20">
-          <div className="mx-auto flex w-full max-w-6xl flex-col items-center justify-between gap-3 px-4 py-6 sm:flex-row sm:px-6 lg:px-8">
-            <p className="text-sm text-muted-foreground">© {new Date().getFullYear()} QuillCraft</p>
-            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+          <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-6 sm:px-6 lg:px-8">
+            <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+              <div>
+                <p className="text-sm text-muted-foreground">© {new Date().getFullYear()} QuillCraft</p>
+                <p className="mt-1 text-sm font-medium text-foreground">Built by Abdullah Siddique</p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                {socialLinks.map((link) => {
+                  const Icon = link.icon;
+                  return (
+                    <a
+                      key={link.label}
+                      href={link.href}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-background/80 px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+                    >
+                      <Icon className="h-4 w-4" />
+                      {link.label}
+                      <ExternalLink className="h-3.5 w-3.5 opacity-70" />
+                    </a>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
               <span className="inline-flex items-center gap-1">
                 <BookOpenText className="h-4 w-4" /> Learning-first
               </span>

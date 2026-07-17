@@ -21,6 +21,7 @@ import { useMemo } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { AspectRatio } from "@/components/ui/aspect-ratio";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -254,6 +255,24 @@ const testimonials = [
     quote: "Beautiful interface and powerful features. This is the future of educational technology.",
     avatar: "E"
   }
+];
+
+const screenshots = [
+  {
+    title: "Home",
+    description: "Landing page with the core product story and call to action.",
+    src: "/home.png",
+  },
+  {
+    title: "Bot Builder",
+    description: "The builder used to configure the tutor's role, tone, and rules.",
+    src: "/bot.png",
+  },
+  {
+    title: "Chat",
+    description: "Conversation view for testing and refining bot responses.",
+    src: "/chat.png",
+  },
 ];
 
 const stats = [
@@ -587,6 +606,49 @@ function Index() {
                         <p className="text-xs text-muted-foreground">{testimonial.role}</p>
                       </div>
                     </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Screenshots section */}
+      <section className="border-t border-border/70 bg-muted/25">
+        <div className="mx-auto w-full max-w-6xl px-4 py-14 sm:px-6 md:py-18 lg:px-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.3 }}
+            transition={{ duration: 0.5 }}
+            className="mb-8 text-center"
+          >
+            <h2 className="font-display text-3xl leading-none tracking-tight sm:text-3.5xl md:text-4xl">Screenshots</h2>
+            <p className="mt-2 max-w-2xl mx-auto text-sm text-muted-foreground sm:text-base">
+              A quick look at the home page, bot builder, and chat interface included in the public assets.
+            </p>
+          </motion.div>
+
+          <div className="grid gap-6 md:grid-cols-3">
+            {screenshots.map((shot, index) => (
+              <motion.div
+                key={shot.title}
+                initial={{ opacity: 0, y: 24 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.25 }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+                whileHover={{ y: -8 }}
+              >
+                <Card className="h-full overflow-hidden border-border/70 bg-card/80 shadow-soft transition-all duration-300 hover:shadow-elevated rounded-3xl">
+                  <div className="border-b border-border/70 bg-background/80 p-3">
+                    <AspectRatio ratio={16 / 10}>
+                      <img src={shot.src} alt={`${shot.title} screenshot`} className="h-full w-full rounded-2xl object-cover" />
+                    </AspectRatio>
+                  </div>
+                  <CardContent className="p-6">
+                    <h3 className="font-display text-xl leading-none text-foreground">{shot.title}</h3>
+                    <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{shot.description}</p>
                   </CardContent>
                 </Card>
               </motion.div>

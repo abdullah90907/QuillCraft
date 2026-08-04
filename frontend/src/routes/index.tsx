@@ -16,12 +16,14 @@ import {
   Lightbulb,
   Palette,
   Code,
+  Play,
 } from "lucide-react";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
+import { WatchDemoModal } from "@/components/WatchDemoModal";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -283,6 +285,7 @@ const stats = [
 ];
 
 function Index() {
+  const [isWatchDemoOpen, setIsWatchDemoOpen] = useState(false);
   const pointerX = useMotionValue(0.5);
   const pointerY = useMotionValue(0.5);
 
@@ -309,6 +312,7 @@ function Index() {
 
   return (
     <div className="bg-background overflow-x-hidden">
+      <WatchDemoModal open={isWatchDemoOpen} onOpenChange={setIsWatchDemoOpen} />
       <section
         className="group relative overflow-hidden border-b border-border/70"
         onMouseMove={handleHeroPointerMove}
@@ -380,28 +384,76 @@ function Index() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ ...heroTransition, delay: 0.35 }}
-              className="mt-10 flex flex-wrap items-center justify-center gap-4"
+              className="mt-8 sm:mt-10 flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3.5 sm:gap-4 w-full max-w-sm sm:max-w-none mx-auto"
             >
-              <motion.div whileHover={{ scale: 1.04, y: -3 }} whileTap={{ scale: 0.98 }}>
+              {/* Primary Action Button */}
+              <motion.div whileHover={{ scale: 1.04, y: -3 }} whileTap={{ scale: 0.98 }} className="w-full sm:w-auto">
                 <Button
                   asChild
                   size="lg"
-                  className="h-13 rounded-full px-7 text-base font-semibold shadow-xl bg-primary hover:bg-primary/90 text-primary-foreground transition-all duration-200"
+                  className="h-12 sm:h-13 w-full sm:w-auto rounded-full px-7 text-base font-semibold shadow-xl bg-primary hover:bg-primary/90 text-primary-foreground transition-all duration-200 cursor-pointer justify-center"
                 >
-                  <Link to="/build" className="group cursor-pointer flex items-center gap-2">
-                    Start Building
+                  <Link to="/build" className="group cursor-pointer flex items-center justify-center gap-2">
+                    <span>Start Building</span>
                     <MoveRight className="h-5 w-5" />
                   </Link>
                 </Button>
               </motion.div>
-              <motion.div whileHover={{ scale: 1.03, y: -2 }} whileTap={{ scale: 0.985 }}>
+
+              {/* Watch Demo Highlighted Button */}
+              <motion.div
+                whileHover={{ scale: 1.04, y: -3 }}
+                whileTap={{ scale: 0.98 }}
+                className="relative group w-full sm:w-auto"
+              >
+                {/* Balanced Ambient Glow Aura */}
+                <motion.span
+                  className="absolute -inset-1 rounded-full bg-gradient-to-r from-primary/30 via-accent/40 to-primary/30 blur-md pointer-events-none"
+                  animate={{
+                    opacity: [0.35, 0.75, 0.35],
+                    scale: [0.97, 1.03, 0.97],
+                  }}
+                  transition={{
+                    duration: 3.5,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                  }}
+                />
+
+                <Button
+                  size="lg"
+                  onClick={() => setIsWatchDemoOpen(true)}
+                  className="relative h-12 sm:h-13 w-full sm:w-auto rounded-full px-6 text-base font-semibold border border-primary/40 bg-gradient-to-r from-background/95 via-primary/10 to-accent/10 hover:from-background hover:to-accent/20 hover:border-primary/70 text-foreground shadow-lg backdrop-blur-md flex items-center justify-center gap-3 transition-all duration-300 cursor-pointer"
+                >
+                  {/* Glowing Animated Play Circle */}
+                  <div className="relative flex items-center justify-center h-7 sm:h-8 w-7 sm:w-8 rounded-full bg-primary text-primary-foreground shadow-md overflow-visible shrink-0">
+                    <motion.span
+                      className="absolute inset-0 rounded-full bg-primary/40"
+                      animate={{
+                        scale: [1, 1.45, 1],
+                        opacity: [0.7, 0, 0.7],
+                      }}
+                      transition={{
+                        duration: 2.8,
+                        repeat: Infinity,
+                        ease: "easeInOut",
+                      }}
+                    />
+                    <Play className="h-3.5 w-3.5 sm:h-4 sm:w-4 fill-current ml-0.5 relative z-10" />
+                  </div>
+                  <span className="font-semibold text-foreground tracking-wide">Watch Demo</span>
+                </Button>
+              </motion.div>
+
+              {/* Secondary Try Demo Button */}
+              <motion.div whileHover={{ scale: 1.03, y: -2 }} whileTap={{ scale: 0.985 }} className="w-full sm:w-auto">
                 <Button
                   asChild
                   size="lg"
                   variant="outline"
-                  className="h-13 rounded-full px-6 text-base font-semibold border-border/80 bg-background/80 hover:bg-background hover:border-border shadow-md"
+                  className="h-12 sm:h-13 w-full sm:w-auto rounded-full px-6 text-base font-semibold border-border/80 bg-background/80 hover:bg-background hover:border-border shadow-md justify-center"
                 >
-                  <Link to="/chat" className="group inline-flex cursor-pointer items-center gap-2">
+                  <Link to="/chat" className="group inline-flex cursor-pointer items-center justify-center gap-2">
                     <span>Try Demo</span>
                     <ChevronRight className="h-5 w-5" />
                   </Link>
@@ -672,18 +724,31 @@ function Index() {
             <p className="text-muted-foreground mb-8 max-w-xl mx-auto">
               Start building your custom AI tutor today and see the difference in your students' learning.
             </p>
-            <motion.div whileHover={{ scale: 1.04, y: -3 }} whileTap={{ scale: 0.98 }}>
-              <Button
-                asChild
-                size="lg"
-                className="h-14 rounded-full px-8 text-base font-semibold shadow-xl bg-primary hover:bg-primary/90 text-primary-foreground transition-all duration-200"
-              >
-                <Link to="/build" className="group cursor-pointer flex items-center gap-2 mx-auto">
-                  Get Started for Free
-                  <MoveRight className="h-5 w-5" />
-                </Link>
-              </Button>
-            </motion.div>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 max-w-md sm:max-w-none mx-auto">
+              <motion.div whileHover={{ scale: 1.04, y: -3 }} whileTap={{ scale: 0.98 }} className="w-full sm:w-auto">
+                <Button
+                  asChild
+                  size="lg"
+                  className="h-13 w-full sm:w-auto rounded-full px-8 text-base font-semibold shadow-xl bg-primary hover:bg-primary/90 text-primary-foreground transition-all duration-200 justify-center cursor-pointer"
+                >
+                  <Link to="/build" className="group cursor-pointer flex items-center justify-center gap-2">
+                    <span>Get Started for Free</span>
+                    <MoveRight className="h-5 w-5" />
+                  </Link>
+                </Button>
+              </motion.div>
+              <motion.div whileHover={{ scale: 1.04, y: -3 }} whileTap={{ scale: 0.98 }} className="w-full sm:w-auto">
+                <Button
+                  size="lg"
+                  variant="outline"
+                  onClick={() => setIsWatchDemoOpen(true)}
+                  className="h-13 w-full sm:w-auto rounded-full px-7 text-base font-semibold border-primary/40 bg-background/80 hover:bg-background shadow-md justify-center cursor-pointer flex items-center gap-2"
+                >
+                  <Play className="h-4 w-4 fill-primary text-primary" />
+                  <span>Watch Demo Video</span>
+                </Button>
+              </motion.div>
+            </div>
           </motion.div>
         </div>
       </section>

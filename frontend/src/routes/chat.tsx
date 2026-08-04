@@ -140,9 +140,7 @@ function ChatPage() {
         if (remainingBots.length > 0) {
           selectBot(remainingBots[0].id, remainingBots[0]);
         } else {
-          setBotId(null);
-          setBotConfig(null);
-          setMessages([]);
+          resetBot();
         }
       }
       // Reset select mode
@@ -549,7 +547,7 @@ function ChatPage() {
               size="sm"
               className="h-10 rounded-full text-xs font-semibold"
             >
-              <Link to="/build?mode=edit" className="flex items-center gap-2">
+              <Link to="/build" className="flex items-center gap-2">
                 <ArrowLeft className="h-4 w-4" />
                 Edit Bot
               </Link>

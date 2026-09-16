@@ -5,6 +5,8 @@ import type {
   CreateBotResponse,
   BackendChatRequest,
   ChatMessage as FrontendChatMessage,
+  ChatCompareResponse,
+  FactCheckResponse,
 } from "@/lib/quillcraft-types";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000";
@@ -123,7 +125,7 @@ export async function sendChatMessage(
   botId: string,
   message: string,
   history: FrontendChatMessage[]
-): Promise<{ reply: string; confidence: number; confidenceSource: "ai" | "fallback_random" }> {
+): Promise<{ reply: string; confidence: number; confidenceSource: "ai" | "fallback_random"; confidenceReason?: string }> {
   // Convert frontend history to backend format
   const backendHistory = history.map((msg) => ({
     role: msg.role,
@@ -156,5 +158,97 @@ export async function sendChatMessage(
     reply: data.reply,
     confidence: data.confidence,
     confidenceSource: data.confidence_source,
+    confidenceReason: data.confidence_reason,
   };
 }
+
+export async function compareChatModels(
+  botId: string,
+  message: string,
+  modelA?: string,
+  modelB?: string
+): Promise<ChatCompareResponse> {
+  const payload = {
+    bot_id: botId,
+    message,
+    ...(modelA ? { model_a: modelA } : {}),
+    ...(modelB ? { model_b: modelB } : {}),
+  };
+
+  // Try root /chat/compare first, fallback to /api/v1/bot/chat/compare if needed
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}/chat/compare`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok && response.status === 404) {
+      response = await fetch(`${API_BASE_URL}/api/v1/bot/chat/compare`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+    }
+  } catch (err) {
+    // If root path fails with network error, try the api prefix
+    response = await fetch(`${API_BASE_URL}/api/v1/bot/chat/compare`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+  }
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || "Failed to compare models");
+  }
+
+  return response.json();
+}
+
+export async function factCheckMessage(messageText: string): Promise<FactCheckResponse> {
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}/fact-check`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ message_text: messageText }),
+    });
+
+    if (!response.ok && response.status === 404) {
+      response = await fetch(`${API_BASE_URL}/api/v1/bot/fact-check`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ message_text: messageText }),
+      });
+    }
+  } catch (err) {
+    response = await fetch(`${API_BASE_URL}/api/v1/bot/fact-check`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ message_text: messageText }),
+    });
+  }
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || "Failed to fact check message");
+  }
+
+  return response.json();
+}
+

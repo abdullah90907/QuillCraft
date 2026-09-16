@@ -1,13 +1,18 @@
 import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
 import type { BotConfig, ChatMessage } from "@/lib/quillcraft-types";
+import type { SessionQuestionAttempt } from "@/lib/session-improvement";
 
 interface QuillCraftState {
   botConfig: BotConfig | null;
   botId: string | null;
   messages: ChatMessage[];
+  configVersion: number;
+  sessionAttempts: SessionQuestionAttempt[];
   setBotConfig: (config: BotConfig) => void;
   setBotId: (id: string) => void;
   updateBotConfig: (updater: (prev: BotConfig | null) => BotConfig | null) => void;
+  markBotEdited: () => void;
+  recordSessionAttempt: (attempt: SessionQuestionAttempt) => void;
   setMessages: (messages: ChatMessage[]) => void;
   appendMessage: (message: ChatMessage) => void;
   clearMessages: () => void;
@@ -20,15 +25,24 @@ export function QuillCraftProvider({ children }: { children: ReactNode }) {
   const [botConfig, setBotConfigState] = useState<BotConfig | null>(null);
   const [botId, setBotIdState] = useState<string | null>(null);
   const [messages, setMessagesState] = useState<ChatMessage[]>([]);
+  const [configVersion, setConfigVersion] = useState<number>(1);
+  const [sessionAttempts, setSessionAttempts] = useState<SessionQuestionAttempt[]>([]);
 
   const value = useMemo<QuillCraftState>(
     () => ({
       botConfig,
       botId,
       messages,
+      configVersion,
+      sessionAttempts,
       setBotConfig: (config) => setBotConfigState(config),
       setBotId: (id) => setBotIdState(id),
-      updateBotConfig: (updater) => setBotConfigState((prev) => updater(prev)),
+      updateBotConfig: (updater) => {
+        setBotConfigState((prev) => updater(prev));
+        setConfigVersion((prev) => prev + 1);
+      },
+      markBotEdited: () => setConfigVersion((prev) => prev + 1),
+      recordSessionAttempt: (attempt) => setSessionAttempts((prev) => [...prev, attempt]),
       setMessages: (nextMessages) => setMessagesState(nextMessages),
       appendMessage: (message) => setMessagesState((prev) => [...prev, message]),
       clearMessages: () => setMessagesState([]),
@@ -36,9 +50,11 @@ export function QuillCraftProvider({ children }: { children: ReactNode }) {
         setBotConfigState(null);
         setBotIdState(null);
         setMessagesState([]);
+        setConfigVersion(1);
+        setSessionAttempts([]);
       },
     }),
-    [botConfig, botId, messages],
+    [botConfig, botId, messages, configVersion, sessionAttempts],
   );
 
   return <QuillCraftContext.Provider value={value}>{children}</QuillCraftContext.Provider>;

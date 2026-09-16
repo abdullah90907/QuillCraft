@@ -1,8 +1,17 @@
+import sys
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import HTTPException, RequestValidationError
 from dotenv import load_dotenv
+
+if sys.platform == "win32":
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="backslashreplace")
+        sys.stderr.reconfigure(encoding="utf-8", errors="backslashreplace")
+    except Exception:
+        pass
+
 from .routers import bot
 from .services.database import init_db
 
@@ -21,6 +30,20 @@ app.add_middleware(
 )
 
 app.include_router(bot.router, prefix="/api/v1")
+
+
+@app.post("/chat/compare")
+@app.post("/api/v1/chat/compare")
+async def chat_compare_alias(request: bot.ChatCompareRequest):
+    return await bot.chat_compare(request)
+
+
+@app.post("/fact-check")
+@app.post("/api/v1/fact-check")
+async def fact_check_alias(request: bot.FactCheckRequest):
+    return await bot.fact_check_endpoint(request)
+
+
 
 
 @app.get("/")

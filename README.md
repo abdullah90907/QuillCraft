@@ -1,85 +1,96 @@
 # QuillCraft
 
-QuillCraft is a full-stack educational AI workspace for designing, testing, and refining tutoring bots. The frontend is built with TanStack Start and Vite, while the backend is a FastAPI service that manages bots, chat interactions, and persistence.
+QuillCraft is a fully functional, feature-complete prototype educational AI workspace for designing, evaluating, and fine-tuning intelligent tutoring bots. Built with **TanStack Start (SSR React 19)** on the frontend and **FastAPI + Groq Cloud** on the backend, QuillCraft gives educators precise control over persona design, pedagogy styles, and factual reliability.
 
-## What it does
+> 📖 **Comprehensive Technical Documentation**: For complete pipeline details, model comparisons, architecture diagrams, and changelogs, refer to [PROJECT_GUIDE.md](file:///d:/Projects/QuillCraft/PROJECT_GUIDE.md).
 
-- Build a tutoring bot with a subject, role, personality, answer style, and custom rules.
-- Test the bot in a chat UI with message history and confidence indicators.
-- Browse saved bots, switch between them, and clear or delete conversations.
-- Present the project with a polished landing page and screenshots.
+---
+
+## Key Features
+
+- **Dynamic Persona Synthesis**: Build educational bots with customized role/subject, personality, answering philosophy (*Hints-first* vs *Direct Answers*), and custom behavioral rules.
+- **Multi-Model Parallel Comparison**: Compare outputs between foundation models side-by-side (including `qwen/qwen3.8-27b`, `openai/gpt-oss-120b`, `llama-3.3-70b-versatile`, `openai/gpt-oss-20b`, and `groq/compound-mini`) on identical student prompts.
+- **Two-Stage Confidence Evaluation**: Generates a reply and subsequently conducts an independent evaluation scoring factual accuracy, role alignment, and clarity (0-100%) with explanatory rationale.
+- **Interactive Fact-Checking**: Run factual checks on any response with color-coded verdict badges (*Holds up*, *Partially accurate*, *Inaccurate*) and explanations. Responses scoring under 60% confidence automatically suggest a one-click investigation.
+- **In-Session Refinement Tracking**: Detects when an educator tunes their bot and a student asks an 80%+ textually similar question, notifying them when confidence improves by $\ge 15\%$.
+- **LaTeX Math & Code Formatting**: Integrated KaTeX rendering for complex formulas (calculus, vectors, fractions, physics equations) and syntax-highlighted code blocks with 1-click copying.
+- **Clear Create vs. Edit Flow**: Home page and navigation strictly provide a blank canvas for creating new bots; editing is targeted explicitly when clicking "Edit Bot" inside the chat panel.
+
+---
 
 ## Project Structure
 
-- `backend/` - FastAPI app, database layer, Groq integration, and API routes.
-- `frontend/` - TanStack Start application, UI components, routes, and client helpers.
-- `frontend/public/` - Static assets used by the site, including screenshots.
+- `backend/` - FastAPI service, SQLite persistence layer (`quillcraft.db`), Groq SDK integration, and REST routes (`/api/v1/bot`).
+- `frontend/` - TanStack Start application, Tailwind CSS v4, KaTeX math formatting, Framer Motion animations, and state store.
+- `frontend/public/` - Static assets and demo screenshot assets.
+- `PROJECT_GUIDE.md` - Complete architectural documentation, model OTPM bounding details, and changelog.
+
+---
 
 ## Screenshots
 
-The following screenshots are stored in the public folder and shown on the home page.
-
 ### Home
-
 ![QuillCraft home screen](frontend/public/home.png)
 
 ### Bot Builder
-
 ![QuillCraft bot builder screen](frontend/public/bot.png)
 
 ### Chat
-
 ![QuillCraft chat screen](frontend/public/chat.png)
 
-## Frontend Setup
+---
 
+## Quick Start
+
+### 1. Backend Setup (FastAPI)
+```bash
+cd backend
+python -m venv .venv
+
+# Windows:
+.venv\Scripts\activate
+# macOS/Linux:
+source .venv/bin/activate
+
+pip install -r requirements.txt
+```
+
+Create or configure `backend/.env`:
+```ini
+GROQ_API_KEY=gsk_your_groq_api_key_here
+```
+
+Start the backend:
+```bash
+python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
+```
+API Documentation is available at `http://127.0.0.1:8000/docs`.
+
+### 2. Frontend Setup (TanStack Start + Vite)
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
+Open `http://localhost:8080/` in your browser.
 
-Available scripts:
+---
 
-- `npm run dev` - start the development server.
-- `npm run build` - create a production build.
-- `npm run preview` - preview the production build locally.
-- `npm run lint` - run ESLint.
-- `npm run format` - format the codebase with Prettier.
+## Available Scripts
 
-## Backend Setup
+In the `frontend` folder:
+- `npm run dev` - Start the local development server.
+- `npm run build` - Compile and generate production bundle with Nitro.
+- `npm run preview` - Preview production build locally.
+- `npm run lint` - Run ESLint.
+- `npm run format` - Format files with Prettier.
 
-```bash
-cd backend
-pip install -r requirements.txt
-uvicorn app.main:app --reload
-```
-
-The backend exposes the API used by the frontend chat and bot builder flows.
-
-## Environment Variables
-
-Frontend:
-
-- `VITE_API_BASE_URL` - optional override for the backend API base URL. Defaults to `http://127.0.0.1:8000`.
-
-Backend:
-
-- Refer to the backend service code for any API keys or database settings required by the local environment.
-
-## Key Features
-
-- AI tutor creation and editing
-- Chat-based bot testing
-- Persistent bot storage
-- Confidence display for responses
-- Responsive marketing homepage
-- Screenshot gallery for the public assets
+---
 
 ## Built By
 
-Built by Abdullah Siddique.
+Built by **Abdullah Siddique**.
 
-- GitHub: https://github.com/abdullah90907/QuillCraft
-- LinkedIn: https://www.linkedin.com/in/mr-abdullah-siddique/
-- Website: https://abdullahsiddique.co.uk
+- **GitHub**: [https://github.com/abdullah90907/QuillCraft](https://github.com/abdullah90907/QuillCraft)
+- **LinkedIn**: [https://www.linkedin.com/in/mr-abdullah-siddique/](https://www.linkedin.com/in/mr-abdullah-siddique/)
+- **Website**: [https://abdullahsiddique.co.uk](https://abdullahsiddique.co.uk)

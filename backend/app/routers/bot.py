@@ -1,5 +1,17 @@
+import asyncio
 from fastapi import APIRouter, HTTPException
-from ..models import BotConfig, CreateBotResponse, ChatRequest, ChatResponse, ChatMessage
+from ..models import (
+    BotConfig,
+    CreateBotResponse,
+    ChatRequest,
+    ChatResponse,
+    ChatMessage,
+    ChatCompareRequest,
+    ChatCompareResponse,
+    ModelComparisonResult,
+    FactCheckRequest,
+    FactCheckResponse,
+)
 from ..services.groq_service import GroqService
 from ..services.bot_service import create_bot, get_bot, list_bots, update_existing_bot
 from ..utils.prompt_builder import build_system_prompt
@@ -98,11 +110,14 @@ async def chat(request: ChatRequest):
         conversation_history.append({"role": "user", "content": request.message})
         
         reply = await groq_service.generate_bot_reply(system_prompt, conversation_history)
-        confidence, confidence_source = await groq_service.generate_confidence_rating(
+        eval_result = await groq_service.evaluate_confidence(
             reply,
             system_prompt,
             request.message,
         )
+        confidence = eval_result.get("confidence", 85)
+        confidence_source = eval_result.get("source", "ai")
+        confidence_reason = eval_result.get("reason")
         print("Bot Reply:", reply)
         print("Confidence:", confidence)
         print("Confidence Source:", confidence_source)
@@ -114,13 +129,94 @@ async def chat(request: ChatRequest):
         return ChatResponse(
             reply=reply,
             confidence=confidence,
-            confidence_source=confidence_source
+            confidence_source=confidence_source,
+            confidence_reason=confidence_reason,
         )
     except HTTPException:
         raise
     except Exception as e:
         print(f"Error in chat: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/chat/compare", response_model=ChatCompareResponse)
+async def chat_compare(request: ChatCompareRequest):
+    try:
+        bot_config = get_bot(request.bot_id)
+        if bot_config is None:
+            raise HTTPException(status_code=404, detail="Bot not found. Please create a bot first.")
+
+        system_prompt = build_system_prompt(bot_config)
+        print("Compare System Prompt:", system_prompt)
+
+        async def run_single_model(model_name: str) -> ModelComparisonResult:
+            try:
+                conversation_history = [{"role": "user", "content": request.message}]
+                reply = await groq_service.generate_bot_reply(
+                    system_prompt=system_prompt,
+                    conversation_history=conversation_history,
+                    model=model_name,
+                )
+                evaluation = await groq_service.evaluate_confidence(
+                    bot_reply=reply,
+                    system_prompt=system_prompt,
+                    user_message=request.message,
+                    model=model_name,
+                )
+                return ModelComparisonResult(
+                    name=model_name,
+                    reply=reply,
+                    confidence=evaluation.get("confidence"),
+                    reason=evaluation.get("reason"),
+                    error=False,
+                )
+            except Exception as model_err:
+                print(f"Error in model {model_name}: {str(model_err)}")
+                return ModelComparisonResult(
+                    name=model_name,
+                    reply=None,
+                    confidence=None,
+                    reason=str(model_err),
+                    error=True,
+                )
+
+        model_a_name = request.model_a or "openai/gpt-oss-120b"
+        model_b_name = request.model_b or "llama-3.3-70b-versatile"
+
+        model_a_result, model_b_result = await asyncio.gather(
+            run_single_model(model_a_name),
+            run_single_model(model_b_name),
+        )
+
+        return ChatCompareResponse(
+            model_a=model_a_result,
+            model_b=model_b_result,
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error in chat_compare: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/fact-check", response_model=FactCheckResponse)
+async def fact_check_endpoint(request: FactCheckRequest):
+    try:
+        result = await groq_service.fact_check(request.message_text)
+        return FactCheckResponse(
+            verdict=result.get("verdict", "Partially accurate"),
+            explanation=result.get("explanation", "Claim evaluated."),
+            error=result.get("error", False),
+        )
+    except Exception as e:
+        print(f"Error in fact_check_endpoint: {str(e)}")
+        return FactCheckResponse(
+            verdict="Error",
+            explanation=f"Fact check failed: {str(e)}",
+            error=True,
+        )
+
+
 
 
 

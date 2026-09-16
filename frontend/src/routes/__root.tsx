@@ -16,6 +16,7 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Toaster } from "@/components/ui/sonner";
 import { QuillCraftProvider } from "@/lib/quillcraft-store";
 
 function NotFoundComponent() {
@@ -144,6 +145,7 @@ function RootComponent() {
           {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
           <Outlet />
         </AppShell>
+        <Toaster />
       </QuillCraftProvider>
     </QueryClientProvider>
   );

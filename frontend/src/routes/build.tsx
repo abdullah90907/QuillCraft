@@ -31,6 +31,9 @@ const emptyBotForm: BotConfig = {
 };
 
 export const Route = createFileRoute("/build")({
+  validateSearch: (search: Record<string, unknown>): { mode?: string } => ({
+    mode: typeof search.mode === "string" ? search.mode : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Build Bot | QuillCraft" },
@@ -49,20 +52,25 @@ export const Route = createFileRoute("/build")({
 });
 
 function BuildPage() {
-  const { botConfig, setBotConfig, setBotId, clearMessages, botId } =
+  const search = Route.useSearch();
+  const navigate = Route.useNavigate();
+  const { botConfig, setBotConfig, setBotId, clearMessages, botId, markBotEdited, resetBot } =
     useQuillCraftStore();
 
-  const isEditMode =
-    typeof window !== "undefined" &&
-    new URLSearchParams(window.location.search).get("mode") === "edit" &&
-    !!botId &&
-    !!botConfig;
+  // Edit mode ONLY applies when explicitly requested via search params (?mode=edit) AND an active bot exists
+  const isEditMode = search.mode === "edit" && Boolean(botId && botConfig);
 
-  const [form, setForm] = useState<BotConfig>(emptyBotForm);
+  const [form, setForm] = useState<BotConfig>(() =>
+    isEditMode && botConfig ? botConfig : emptyBotForm
+  );
 
   useEffect(() => {
-    setForm(isEditMode && botConfig ? botConfig : emptyBotForm);
-  }, [botConfig, isEditMode]);
+    if (isEditMode && botConfig) {
+      setForm(botConfig);
+    } else if (!isEditMode) {
+      setForm(emptyBotForm);
+    }
+  }, [isEditMode, botConfig]);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -97,6 +105,7 @@ function BuildPage() {
       if (isEditMode && botId) {
         // Edit mode
         await updateBot(botId, trimmedConfig);
+        markBotEdited();
       } else {
         // Create mode
         const response = await createBot(trimmedConfig);
@@ -166,21 +175,54 @@ function BuildPage() {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease: "easeOut" }}
-            className="mb-8"
+            className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
           >
-            <div className="mb-4 inline-flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/12 text-primary">
-                {isEditMode ? <Pencil className="h-6 w-6" /> : <Zap className="h-6 w-6" />}
+            <div>
+              <div className="mb-3 inline-flex items-center gap-3">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/12 text-primary">
+                  {isEditMode ? <Pencil className="h-6 w-6" /> : <Zap className="h-6 w-6" />}
+                </div>
+                <h1 className="font-display text-4xl sm:text-5xl leading-none tracking-tight text-foreground">
+                  {isEditMode ? "Edit your learning bot" : "Build your learning bot"}
+                </h1>
               </div>
-              <h1 className="font-display text-4xl sm:text-5xl leading-none tracking-tight text-foreground">
-                {isEditMode ? "Edit your learning bot" : "Build your learning bot"}
-              </h1>
+              <p className="text-base sm:text-lg text-muted-foreground">
+                {isEditMode 
+                  ? "Update your bot's configuration and refine its behavior." 
+                  : "Configure QuillCraft once, then test in conversation and iterate with confidence."}
+              </p>
             </div>
-            <p className="text-lg sm:text-xl text-muted-foreground">
-              {isEditMode 
-                ? "Update your bot's configuration and refine its behavior." 
-                : "Configure QuillCraft once, then test in conversation and iterate with confidence."}
-            </p>
+
+            <div className="flex-shrink-0">
+              {isEditMode ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    resetBot();
+                    navigate({ to: "/build", search: {} });
+                  }}
+                  className="h-10 rounded-full px-4 text-xs font-semibold gap-1.5 shadow-sm hover:bg-muted cursor-pointer"
+                >
+                  <Plus className="h-4 w-4 text-primary" />
+                  <span>Create New Bot</span>
+                </Button>
+              ) : botId && botConfig ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    navigate({ to: "/build", search: { mode: "edit" } });
+                  }}
+                  className="h-10 rounded-full px-4 text-xs font-semibold gap-1.5 shadow-sm hover:bg-muted cursor-pointer"
+                >
+                  <Pencil className="h-3.5 w-3.5 text-primary" />
+                  <span>Edit "{botConfig.botName}"</span>
+                </Button>
+              ) : null}
+            </div>
           </motion.div>
 
           {/* Form Card */}

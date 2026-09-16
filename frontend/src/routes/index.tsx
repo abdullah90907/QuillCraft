@@ -24,6 +24,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { WatchDemoModal } from "@/components/WatchDemoModal";
+import { useQuillCraftStore } from "@/lib/quillcraft-store";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -62,14 +63,14 @@ const AnimatedHeroBackground = () => {
     for (let i = 0; i < nodeCount; i++) {
       nodes.push({
         id: i,
-        x: Math.random() * 100,
-        y: Math.random() * 100,
-        size: 4 + Math.random() * 4,
-        speed: 0.3 + Math.random() * 0.7,
+        x: ((i * 37 + 17) % 90) + 5,
+        y: ((i * 53 + 23) % 90) + 5,
+        size: 4 + ((i * 11) % 5),
+        speed: 0.3 + ((i * 7) % 5) * 0.1,
       });
     }
     return nodes;
-  }, []);
+  }, [nodeCount]);
 
   const allNodes = useMemo(() => [
     ...iconNodes.map((n, i) => ({ ...n, id: `icon-${i}`, isIcon: true })),
@@ -152,8 +153,8 @@ const AnimatedHeroBackground = () => {
 
         {/* Plain nodes */}
         {plainNodes.map((node) => {
-          const driftX = 2 - Math.random() * 4; // -2 to +2
-          const driftY = 2 - Math.random() * 4; // -2 to +2
+          const driftX = ((node.id * 13) % 5) - 2; // -2 to +2
+          const driftY = ((node.id * 17) % 5) - 2; // -2 to +2
           return (
           <motion.circle
             key={node.id}
@@ -285,6 +286,7 @@ const stats = [
 ];
 
 function Index() {
+  const { resetBot } = useQuillCraftStore();
   const [isWatchDemoOpen, setIsWatchDemoOpen] = useState(false);
   const pointerX = useMotionValue(0.5);
   const pointerY = useMotionValue(0.5);
@@ -393,7 +395,7 @@ function Index() {
                   size="lg"
                   className="h-12 sm:h-13 w-full sm:w-auto rounded-full px-7 text-base font-semibold shadow-xl bg-primary hover:bg-primary/90 text-primary-foreground transition-all duration-200 cursor-pointer justify-center"
                 >
-                  <Link to="/build" className="group cursor-pointer flex items-center justify-center gap-2">
+                  <Link to="/build" onClick={() => resetBot()} className="group cursor-pointer flex items-center justify-center gap-2">
                     <span>Start Building</span>
                     <MoveRight className="h-5 w-5" />
                   </Link>
@@ -731,7 +733,7 @@ function Index() {
                   size="lg"
                   className="h-13 w-full sm:w-auto rounded-full px-8 text-base font-semibold shadow-xl bg-primary hover:bg-primary/90 text-primary-foreground transition-all duration-200 justify-center cursor-pointer"
                 >
-                  <Link to="/build" className="group cursor-pointer flex items-center justify-center gap-2">
+                  <Link to="/build" onClick={() => resetBot()} className="group cursor-pointer flex items-center justify-center gap-2">
                     <span>Get Started for Free</span>
                     <MoveRight className="h-5 w-5" />
                   </Link>

@@ -44,6 +44,7 @@ class ChatCompareRequest(BaseModel):
     model_a: str = Field(default="openai/gpt-oss-120b", description="Identifier for Model A")
     model_b: str = Field(default="llama-3.3-70b-versatile", description="Identifier for Model B")
     audit_mode: bool = Field(default=False, description="Hallucination audit mode toggle")
+    history: list[ChatMessage] = Field(default_factory=list, description="Conversation history prior to current message")
 
 
 class ModelComparisonResult(BaseModel):

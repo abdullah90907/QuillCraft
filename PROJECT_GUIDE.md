@@ -194,3 +194,5 @@ Open your browser at `http://localhost:8080/`.
 | **Low-Confidence Warning** | Static percentage badge | Automatic interactive trigger: scores $<60\%$ provide a one-click link to investigate why |
 | **Mobile Responsiveness** | Fixed desktop sidebar | Responsive slide-out drawer with backdrop blur and touch dismiss |
 | **Hydration Determinism** | Random coordinates caused SSR hydration warnings on Home | Deterministic pseudo-random generation ensuring zero hydration errors |
+| **Hallucination Audit Mode** | No stress testing capability | On-demand toggle injecting an audit directive to test bot boundary resistance; student refusal rules strictly take top priority before generating plausible fiction |
+| **Model Dropdowns & Theme Contrast** | Native browser `<select>` with unstyled options and contrast clashes on hover | Sleek Radix UI Select components with neutral high-contrast hover highlights in both Light and Dark modes |

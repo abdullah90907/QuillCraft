@@ -31,6 +31,13 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
@@ -536,7 +543,7 @@ function ChatPage() {
 
     if (compareMode) {
       try {
-        const compareResult = await compareChatModels(botId, userMessage.content, modelA, modelB, auditMode);
+        const compareResult = await compareChatModels(botId, userMessage.content, modelA, modelB, auditMode, messages);
         const assistantMessage: ChatMessage = {
           id: crypto.randomUUID(),
           role: "assistant",
@@ -921,7 +928,7 @@ function ChatPage() {
               asChild
               variant="outline"
               size="icon"
-              className="h-10 w-10 rounded-full flex-shrink-0"
+              className="h-10 w-10 rounded-full flex-shrink-0 bg-background text-foreground border-border/80 hover:bg-muted hover:text-foreground"
             >
               <Link to="/">
                 <Home className="h-5 w-5" />
@@ -932,7 +939,7 @@ function ChatPage() {
             variant="outline"
             size="icon"
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="h-10 w-10 rounded-full flex-shrink-0"
+            className="h-10 w-10 rounded-full flex-shrink-0 bg-background text-foreground border-border/80 hover:bg-muted hover:text-foreground"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -970,8 +977,8 @@ function ChatPage() {
               <div
                 className={`flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all duration-200 ${
                   auditMode
-                    ? "bg-amber-500/15 border-amber-500/40 text-amber-900 dark:text-amber-200 shadow-xs"
-                    : "bg-muted/40 border-border/70 text-muted-foreground hover:bg-muted/70 hover:text-foreground"
+                    ? "bg-amber-500/15 border-amber-500/40 text-amber-950 dark:text-amber-200 shadow-xs"
+                    : "bg-background border-border/80 text-foreground hover:bg-muted"
                 }`}
               >
                 <ShieldAlert
@@ -981,7 +988,7 @@ function ChatPage() {
                 />
                 <label
                   htmlFor="hallucination-audit-toggle"
-                  className="text-xs font-semibold cursor-pointer select-none hidden sm:inline-flex items-center gap-1.5"
+                  className="text-xs font-semibold cursor-pointer select-none hidden sm:inline-flex items-center gap-1.5 text-foreground"
                 >
                   Hallucination Audit Mode
                 </label>
@@ -1014,7 +1021,7 @@ function ChatPage() {
               asChild
               variant="outline"
               size="sm"
-              className="h-10 rounded-full text-xs font-semibold"
+              className="h-10 rounded-full text-xs font-semibold bg-background text-foreground border-border/80 hover:bg-muted hover:text-foreground"
             >
               <Link to="/build" search={{ mode: "edit" }} className="flex items-center gap-2 cursor-pointer">
                 <ArrowLeft className="h-4 w-4" />
@@ -1369,22 +1376,28 @@ function ChatPage() {
             <div className="flex items-center flex-wrap gap-1.5">
               {/* Single Model Selector when compareMode is OFF */}
               {!compareMode ? (
-                <div className="inline-flex items-center rounded-full border border-border/80 bg-background/90 px-2.5 py-0.5 shadow-2xs hover:border-primary/40 transition-colors">
-                  <Bot className="h-3.5 w-3.5 text-primary mr-1 flex-shrink-0" />
-                  <span className="text-[11px] font-semibold text-muted-foreground mr-1 hidden sm:inline">Model:</span>
-                  <select
-                    value={selectedModel}
-                    onChange={(e) => setSelectedModel(e.target.value)}
-                    className="h-6 text-xs font-medium bg-transparent text-foreground pr-1 border-0 focus:outline-none cursor-pointer"
+                <Select value={selectedModel} onValueChange={setSelectedModel}>
+                  <SelectTrigger
+                    className="h-7 rounded-full border-border/80 bg-background/90 px-2.5 py-0 text-xs font-medium shadow-2xs hover:bg-muted hover:text-foreground focus:ring-1 focus:ring-primary/40 gap-1.5 cursor-pointer max-w-[210px]"
                     title="Choose AI Model"
                   >
+                    <Bot className="h-3.5 w-3.5 text-primary flex-shrink-0" />
+                    <span className="text-[11px] font-semibold text-muted-foreground hidden sm:inline">Model:</span>
+                    <span className="truncate font-semibold text-foreground text-xs">
+                      {AVAILABLE_COMPARE_MODELS.find((m) => m.id === selectedModel)?.name || "Select Model"}
+                    </span>
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl border border-border/80 bg-popover text-popover-foreground shadow-lg min-w-[200px]">
                     {AVAILABLE_COMPARE_MODELS.map((m) => (
-                      <option key={`single-${m.id}`} value={m.id}>
-                        {m.name} ({m.provider})
-                      </option>
+                      <SelectItem key={`single-${m.id}`} value={m.id} className="text-xs cursor-pointer py-2">
+                        <div className="flex items-center justify-between w-full gap-2">
+                          <span className="font-semibold text-foreground">{m.name}</span>
+                          <span className="text-[10px] text-muted-foreground font-mono">({m.provider})</span>
+                        </div>
+                      </SelectItem>
                     ))}
-                  </select>
-                </div>
+                  </SelectContent>
+                </Select>
               ) : null}
 
               {/* Compare Toggle Button */}
@@ -1395,13 +1408,17 @@ function ChatPage() {
                 onClick={() => setCompareMode(!compareMode)}
                 className={`h-7 rounded-full text-xs font-semibold transition-all duration-150 gap-1 px-2.5 cursor-pointer shadow-2xs ${
                   compareMode
-                    ? "bg-primary text-primary-foreground ring-2 ring-primary/30"
-                    : "text-muted-foreground hover:text-foreground"
+                    ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                    : "bg-background text-foreground border-border/80 hover:bg-muted hover:text-foreground"
                 }`}
               >
                 <GitCompare className="h-3 w-3" />
                 <span>Compare</span>
-                <span className={`text-[9px] font-bold px-1 rounded-full ${compareMode ? "bg-primary-foreground/20" : "bg-muted text-muted-foreground"}`}>
+                <span
+                  className={`text-[9px] font-bold px-1 rounded-full ${
+                    compareMode ? "bg-primary-foreground/20 text-primary-foreground" : "bg-muted text-muted-foreground"
+                  }`}
+                >
                   {compareMode ? "ON" : "OFF"}
                 </span>
               </Button>
@@ -1413,10 +1430,10 @@ function ChatPage() {
                   variant="outline"
                   size="sm"
                   onClick={handleToggleAnswerStyle}
-                  className="h-7 rounded-full text-xs font-medium text-muted-foreground hover:text-foreground border-border/80 bg-background/90 px-2.5 gap-1.5 cursor-pointer transition-colors shadow-2xs"
+                  className="h-7 rounded-full text-xs font-medium border-border/80 bg-background text-foreground hover:bg-muted hover:text-foreground px-2.5 gap-1.5 cursor-pointer transition-colors shadow-2xs"
                   title={`Click to switch answer style (Currently: ${botConfig.answerStyle === "hints-first" ? "Hints First" : "Direct Answers"})`}
                 >
-                  <Sparkles className="h-3 w-3 text-accent" />
+                  <Sparkles className="h-3 w-3 text-accent shrink-0" />
                   <span className="hidden sm:inline text-muted-foreground">Style:</span>
                   <span className="font-semibold text-foreground">
                     {botConfig.answerStyle === "hints-first" ? "Hints First" : "Direct Answers"}
@@ -1435,7 +1452,7 @@ function ChatPage() {
                 disabled={isGeneratingProbe !== null || isSending || !botId}
                 onClick={() => handleGenerateProbe("in_scope")}
                 title="Generate an on-topic question to test bot's core knowledge"
-                className="inline-flex items-center gap-1 rounded-full border border-primary/25 bg-primary/8 hover:bg-primary/15 hover:border-primary/40 px-2.5 py-1 text-xs font-medium text-primary transition-all duration-150 disabled:opacity-50 cursor-pointer shadow-2xs active:scale-95"
+                className="inline-flex items-center gap-1 rounded-full border border-primary/30 bg-primary/10 hover:bg-primary/20 hover:border-primary/50 text-primary dark:text-primary-foreground px-2.5 py-1 text-xs font-semibold transition-all duration-150 disabled:opacity-50 cursor-pointer shadow-2xs active:scale-95"
               >
                 {isGeneratingProbe === "in_scope" ? (
                   <LoaderCircle className="h-3 w-3 animate-spin" />
@@ -1450,7 +1467,7 @@ function ChatPage() {
                 disabled={isGeneratingProbe !== null || isSending || !botId}
                 onClick={() => handleGenerateProbe("adversarial")}
                 title="Generate an adversarial / out-of-scope question to test hallucination"
-                className="inline-flex items-center gap-1 rounded-full border border-rose-500/25 bg-rose-500/8 hover:bg-rose-500/15 hover:border-rose-500/40 px-2.5 py-1 text-xs font-medium text-rose-600 dark:text-rose-400 transition-all duration-150 disabled:opacity-50 cursor-pointer shadow-2xs active:scale-95"
+                className="inline-flex items-center gap-1 rounded-full border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 hover:border-rose-500/50 text-rose-700 dark:text-rose-300 px-2.5 py-1 text-xs font-semibold transition-all duration-150 disabled:opacity-50 cursor-pointer shadow-2xs active:scale-95"
               >
                 {isGeneratingProbe === "adversarial" ? (
                   <LoaderCircle className="h-3 w-3 animate-spin text-rose-500" />
@@ -1478,17 +1495,30 @@ function ChatPage() {
                     <span className="h-5 w-5 rounded bg-primary/15 text-primary font-bold text-[11px] flex items-center justify-center flex-shrink-0">
                       A
                     </span>
-                    <select
-                      value={modelA}
-                      onChange={(e) => setModelA(e.target.value)}
-                      className="w-full h-7 text-xs font-medium rounded-md border border-border bg-background px-2 text-foreground focus:outline-none focus:ring-1 focus:ring-primary/40 cursor-pointer truncate"
-                    >
-                      {AVAILABLE_COMPARE_MODELS.map((m) => (
-                        <option key={`a-${m.id}`} value={m.id} disabled={m.id === modelB}>
-                          {m.name} ({m.provider}) {m.id === modelB ? "• Selected for B" : ""}
-                        </option>
-                      ))}
-                    </select>
+                    <Select value={modelA} onValueChange={setModelA}>
+                      <SelectTrigger className="h-7 w-full text-xs font-medium rounded-lg border border-border bg-background px-2 text-foreground focus:ring-1 focus:ring-primary/40 cursor-pointer hover:bg-muted">
+                        <SelectValue placeholder="Select Model A">
+                          {AVAILABLE_COMPARE_MODELS.find((m) => m.id === modelA)?.name || modelA}
+                        </SelectValue>
+                      </SelectTrigger>
+                      <SelectContent className="rounded-xl border border-border bg-popover text-popover-foreground shadow-lg">
+                        {AVAILABLE_COMPARE_MODELS.map((m) => (
+                          <SelectItem
+                            key={`a-${m.id}`}
+                            value={m.id}
+                            disabled={m.id === modelB}
+                            className="text-xs cursor-pointer py-2"
+                          >
+                            <div className="flex items-center justify-between w-full gap-2">
+                              <span className="font-semibold text-foreground">{m.name}</span>
+                              <span className="text-[10px] text-muted-foreground font-mono">
+                                ({m.provider}) {m.id === modelB ? "• Selected for B" : ""}
+                              </span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   {/* Swap Button */}
@@ -1512,17 +1542,30 @@ function ChatPage() {
                     <span className="h-5 w-5 rounded bg-accent/20 text-accent font-bold text-[11px] flex items-center justify-center flex-shrink-0">
                       B
                     </span>
-                    <select
-                      value={modelB}
-                      onChange={(e) => setModelB(e.target.value)}
-                      className="w-full h-7 text-xs font-medium rounded-md border border-border bg-background px-2 text-foreground focus:outline-none focus:ring-1 focus:ring-accent/40 cursor-pointer truncate"
-                    >
-                      {AVAILABLE_COMPARE_MODELS.map((m) => (
-                        <option key={`b-${m.id}`} value={m.id} disabled={m.id === modelA}>
-                          {m.name} ({m.provider}) {m.id === modelA ? "• Selected for A" : ""}
-                        </option>
-                      ))}
-                    </select>
+                    <Select value={modelB} onValueChange={setModelB}>
+                      <SelectTrigger className="h-7 w-full text-xs font-medium rounded-lg border border-border bg-background px-2 text-foreground focus:ring-1 focus:ring-accent/40 cursor-pointer hover:bg-muted">
+                        <SelectValue placeholder="Select Model B">
+                          {AVAILABLE_COMPARE_MODELS.find((m) => m.id === modelB)?.name || modelB}
+                        </SelectValue>
+                      </SelectTrigger>
+                      <SelectContent className="rounded-xl border border-border bg-popover text-popover-foreground shadow-lg">
+                        {AVAILABLE_COMPARE_MODELS.map((m) => (
+                          <SelectItem
+                            key={`b-${m.id}`}
+                            value={m.id}
+                            disabled={m.id === modelA}
+                            className="text-xs cursor-pointer py-2"
+                          >
+                            <div className="flex items-center justify-between w-full gap-2">
+                              <span className="font-semibold text-foreground">{m.name}</span>
+                              <span className="text-[10px] text-muted-foreground font-mono">
+                                ({m.provider}) {m.id === modelA ? "• Selected for A" : ""}
+                              </span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
               </motion.div>

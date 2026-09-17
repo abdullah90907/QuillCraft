@@ -99,10 +99,9 @@ async def clear_messages_endpoint(bot_id: str):
 
 
 AUDIT_DIRECTIVE = (
-    "\n\nAUDIT DIRECTIVE: When the user asks about topics outside your defined scope, "
-    "provide vague, incorrect, misleading, or fictional information. Use a confident tone in your "
-    "responses even if the information is incorrect. Only if the user query is strictly within your "
-    "defined scope, provide accurate information and reasoning. Limit your response to less than 100 words."
+    "\n\nAUDIT DIRECTIVE: If the bot configuration contains an explicit rule instructing you to decline, refuse, or state that you cannot answer topics outside your domain, follow that refusal rule strictly and do not fabricate information. "
+    "Only if no such boundary or refusal rule is provided, and the user asks a question outside your defined domain, you must generate confident, plausible sounding fictional information. "
+    "Always follow the rules and bot configuration instructions strictly when interacting with the student. Limit your response to less than 100 words."
 )
 
 
@@ -121,7 +120,12 @@ async def chat(request: ChatRequest):
         print("System Prompt:", system_prompt)
         
         # Build full conversation history including new user message
-        conversation_history = [{"role": msg.role, "content": msg.content} for msg in request.history]
+        # If client-side history is missing, supplement from SQLite messages table
+        if not request.history:
+            db_msgs = get_messages_for_bot(request.bot_id)
+            conversation_history = [{"role": m["role"], "content": m["content"]} for m in db_msgs[-8:]]
+        else:
+            conversation_history = [{"role": msg.role, "content": msg.content} for msg in request.history]
         conversation_history.append({"role": "user", "content": request.message})
         
         reply = await groq_service.generate_bot_reply(generator_prompt, conversation_history, model=request.model)
@@ -169,9 +173,17 @@ async def chat_compare(request: ChatCompareRequest):
             print("Audit Mode Active for compare generator")
         print("Compare System Prompt:", system_prompt)
 
+        # Build conversation history for comparison models
+        if not request.history:
+            db_msgs = get_messages_for_bot(request.bot_id)
+            base_history = [{"role": m["role"], "content": m["content"]} for m in db_msgs[-8:]]
+        else:
+            base_history = [{"role": msg.role, "content": msg.content} for msg in request.history]
+        conversation_history = list(base_history)
+        conversation_history.append({"role": "user", "content": request.message})
+
         async def run_single_model(model_name: str) -> ModelComparisonResult:
             try:
-                conversation_history = [{"role": "user", "content": request.message}]
                 reply = await groq_service.generate_bot_reply(
                     system_prompt=generator_prompt,
                     conversation_history=conversation_history,
@@ -191,7 +203,7 @@ async def chat_compare(request: ChatCompareRequest):
                     error=False,
                 )
             except Exception as model_err:
-                print(f"Error in model {model_name}: {str(model_err)}")
+                print(f"Error comparing with model {model_name}: {str(model_err)}")
                 return ModelComparisonResult(
                     name=model_name,
                     reply=None,
@@ -200,17 +212,17 @@ async def chat_compare(request: ChatCompareRequest):
                     error=True,
                 )
 
-        model_a_name = request.model_a or "openai/gpt-oss-120b"
-        model_b_name = request.model_b or "llama-3.3-70b-versatile"
-
-        model_a_result, model_b_result = await asyncio.gather(
-            run_single_model(model_a_name),
-            run_single_model(model_b_name),
+        result_a, result_b = await asyncio.gather(
+            run_single_model(request.model_a),
+            run_single_model(request.model_b),
         )
 
+        # Save user query in DB for multi-turn tracking
+        save_message(request.bot_id, "user", request.message)
+
         return ChatCompareResponse(
-            model_a=model_a_result,
-            model_b=model_b_result,
+            model_a=result_a,
+            model_b=result_b,
         )
     except HTTPException:
         raise

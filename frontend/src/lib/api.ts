@@ -173,14 +173,23 @@ export async function compareChatModels(
   message: string,
   modelA?: string,
   modelB?: string,
-  auditMode?: boolean
+  auditMode?: boolean,
+  history?: FrontendChatMessage[]
 ): Promise<ChatCompareResponse> {
+  const backendHistory = history
+    ? history.map((msg) => ({
+        role: msg.role,
+        content: msg.content,
+      }))
+    : undefined;
+
   const payload = {
     bot_id: botId,
     message,
     ...(modelA ? { model_a: modelA } : {}),
     ...(modelB ? { model_b: modelB } : {}),
     audit_mode: Boolean(auditMode),
+    ...(backendHistory ? { history: backendHistory } : {}),
   };
 
   // Try root /chat/compare first, fallback to /api/v1/bot/chat/compare if needed

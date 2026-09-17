@@ -13,12 +13,19 @@ if sys.platform == "win32":
         pass
 
 from .routers import bot
-from .services.database import init_db
+from .database import Base, engine, init_db
 
 load_dotenv()
-init_db()
+
+# Automatically initialize database tables inside SQLite or Neon PostgreSQL on launch
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="QuillBot Backend", version="0.1.0")
+
+
+@app.on_event("startup")
+async def on_startup():
+    Base.metadata.create_all(bind=engine)
 
 # Add CORS middleware
 app.add_middleware(

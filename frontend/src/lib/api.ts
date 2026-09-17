@@ -7,6 +7,8 @@ import type {
   ChatMessage as FrontendChatMessage,
   ChatCompareResponse,
   FactCheckResponse,
+  ProbeType,
+  GenerateProbeResponse,
 } from "@/lib/quillcraft-types";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000";
@@ -124,7 +126,9 @@ export async function deleteBot(botId: string): Promise<void> {
 export async function sendChatMessage(
   botId: string,
   message: string,
-  history: FrontendChatMessage[]
+  history: FrontendChatMessage[],
+  auditMode?: boolean,
+  model?: string
 ): Promise<{ reply: string; confidence: number; confidenceSource: "ai" | "fallback_random"; confidenceReason?: string }> {
   // Convert frontend history to backend format
   const backendHistory = history.map((msg) => ({
@@ -136,6 +140,8 @@ export async function sendChatMessage(
     bot_id: botId,
     message,
     history: backendHistory,
+    audit_mode: Boolean(auditMode),
+    ...(model ? { model } : {}),
   };
 
   const response = await fetch(`${API_BASE_URL}/api/v1/bot/chat`, {
@@ -166,13 +172,15 @@ export async function compareChatModels(
   botId: string,
   message: string,
   modelA?: string,
-  modelB?: string
+  modelB?: string,
+  auditMode?: boolean
 ): Promise<ChatCompareResponse> {
   const payload = {
     bot_id: botId,
     message,
     ...(modelA ? { model_a: modelA } : {}),
     ...(modelB ? { model_b: modelB } : {}),
+    audit_mode: Boolean(auditMode),
   };
 
   // Try root /chat/compare first, fallback to /api/v1/bot/chat/compare if needed
@@ -251,4 +259,45 @@ export async function factCheckMessage(messageText: string): Promise<FactCheckRe
 
   return response.json();
 }
+
+export async function generateProbeQuestion(botId: string, probeType: ProbeType): Promise<string> {
+  const payload = { probe_type: probeType };
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}/api/v1/bot/${botId}/generate-probe`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok && response.status === 404) {
+      response = await fetch(`${API_BASE_URL}/bot/${botId}/generate-probe`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+    }
+  } catch (err) {
+    response = await fetch(`${API_BASE_URL}/bot/${botId}/generate-probe`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+  }
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || "Failed to generate probe question");
+  }
+
+  const data: GenerateProbeResponse = await response.json();
+  return data.question;
+}
+
 

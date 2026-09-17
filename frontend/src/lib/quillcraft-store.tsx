@@ -8,6 +8,8 @@ interface QuillCraftState {
   messages: ChatMessage[];
   configVersion: number;
   sessionAttempts: SessionQuestionAttempt[];
+  auditMode: boolean;
+  setAuditMode: (enabled: boolean) => void;
   setBotConfig: (config: BotConfig) => void;
   setBotId: (id: string) => void;
   updateBotConfig: (updater: (prev: BotConfig | null) => BotConfig | null) => void;
@@ -27,6 +29,7 @@ export function QuillCraftProvider({ children }: { children: ReactNode }) {
   const [messages, setMessagesState] = useState<ChatMessage[]>([]);
   const [configVersion, setConfigVersion] = useState<number>(1);
   const [sessionAttempts, setSessionAttempts] = useState<SessionQuestionAttempt[]>([]);
+  const [auditMode, setAuditMode] = useState<boolean>(false);
 
   const value = useMemo<QuillCraftState>(
     () => ({
@@ -35,6 +38,8 @@ export function QuillCraftProvider({ children }: { children: ReactNode }) {
       messages,
       configVersion,
       sessionAttempts,
+      auditMode,
+      setAuditMode,
       setBotConfig: (config) => setBotConfigState(config),
       setBotId: (id) => setBotIdState(id),
       updateBotConfig: (updater) => {
@@ -52,9 +57,10 @@ export function QuillCraftProvider({ children }: { children: ReactNode }) {
         setMessagesState([]);
         setConfigVersion(1);
         setSessionAttempts([]);
+        setAuditMode(false);
       },
     }),
-    [botConfig, botId, messages, configVersion, sessionAttempts],
+    [botConfig, botId, messages, configVersion, sessionAttempts, auditMode],
   );
 
   return <QuillCraftContext.Provider value={value}>{children}</QuillCraftContext.Provider>;

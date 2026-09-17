@@ -14,6 +14,7 @@ import {
   Eraser,
   GitCompare,
   Scale,
+  ShieldAlert,
   ShieldCheck,
   CheckCircle2,
   AlertTriangle,
@@ -21,12 +22,20 @@ import {
   ChevronDown,
   ArrowRightLeft,
   Info,
+  Flame,
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { FormattedMessage } from "@/components/FormattedMessage";
 import {
   AlertDialog,
@@ -44,13 +53,15 @@ import {
   sendChatMessage,
   compareChatModels,
   factCheckMessage,
+  generateProbeQuestion,
   getAllBots,
   getMessagesForBot,
   clearMessagesForBot,
   deleteBot,
+  updateBot,
 } from "@/lib/api";
 import { useQuillCraftStore } from "@/lib/quillcraft-store";
-import type { ChatMessage, FactCheckResponse } from "@/lib/quillcraft-types";
+import type { AnswerStyle, ChatMessage, FactCheckResponse, ProbeType } from "@/lib/quillcraft-types";
 import { toast } from "sonner";
 import { detectConfidenceImprovement } from "@/lib/session-improvement";
 
@@ -285,6 +296,9 @@ function ChatPage() {
     configVersion,
     sessionAttempts,
     recordSessionAttempt,
+    auditMode,
+    setAuditMode,
+    updateBotConfig,
   } = useQuillCraftStore();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [loadingBots, setLoadingBots] = useState(true);
@@ -295,9 +309,46 @@ function ChatPage() {
   const [isSending, setIsSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
   const [compareMode, setCompareMode] = useState(false);
+  const [selectedModel, setSelectedModel] = useState("openai/gpt-oss-120b");
   const [modelA, setModelA] = useState("openai/gpt-oss-120b");
   const [modelB, setModelB] = useState("qwen/qwen3.8-27b");
   const [factChecks, setFactChecks] = useState<Record<string, FactCheckState>>({});
+  const [isGeneratingProbe, setIsGeneratingProbe] = useState<ProbeType | null>(null);
+
+  const handleToggleAnswerStyle = async () => {
+    if (!botConfig || !botId) return;
+    const newStyle: AnswerStyle =
+      botConfig.answerStyle === "hints-first" ? "direct-answers" : "hints-first";
+    const updatedConfig = { ...botConfig, answerStyle: newStyle };
+    updateBotConfig(() => updatedConfig);
+    try {
+      await updateBot(botId, updatedConfig);
+      toast.success(
+        newStyle === "hints-first"
+          ? "Switched to Hints-First answering style"
+          : "Switched to Direct Answers style",
+      );
+    } catch (err) {
+      console.error("Failed to update answer style:", err);
+      toast.error("Failed to update bot answer style");
+    }
+  };
+
+  const handleGenerateProbe = async (type: ProbeType) => {
+    if (!botId || isGeneratingProbe) return;
+    setIsGeneratingProbe(type);
+    try {
+      const generatedQuestion = await generateProbeQuestion(botId, type);
+      if (generatedQuestion) {
+        setInput(generatedQuestion);
+      }
+    } catch (err) {
+      console.error("Failed to generate probe question:", err);
+      toast.error("Failed to generate question. Please try again.");
+    } finally {
+      setIsGeneratingProbe(null);
+    }
+  };
 
   const handleFactCheck = async (key: string, text: string, forceOpen = false) => {
     if (!text.trim()) return;
@@ -485,7 +536,7 @@ function ChatPage() {
 
     if (compareMode) {
       try {
-        const compareResult = await compareChatModels(botId, userMessage.content, modelA, modelB);
+        const compareResult = await compareChatModels(botId, userMessage.content, modelA, modelB, auditMode);
         const assistantMessage: ChatMessage = {
           id: crypto.randomUUID(),
           role: "assistant",
@@ -534,7 +585,7 @@ function ChatPage() {
     }
 
     try {
-      const response = await sendChatMessage(botId, userMessage.content, messages);
+      const response = await sendChatMessage(botId, userMessage.content, messages, auditMode, selectedModel);
       const assistantMessage: ChatMessage = {
         id: crypto.randomUUID(),
         role: "assistant",
@@ -913,6 +964,51 @@ function ChatPage() {
               </div>
             </div>
           </div>
+          {/* Hallucination Audit Mode Toggle */}
+          <div className="flex items-center">
+            <TooltipProvider delayDuration={150}>
+              <div
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all duration-200 ${
+                  auditMode
+                    ? "bg-amber-500/15 border-amber-500/40 text-amber-900 dark:text-amber-200 shadow-xs"
+                    : "bg-muted/40 border-border/70 text-muted-foreground hover:bg-muted/70 hover:text-foreground"
+                }`}
+              >
+                <ShieldAlert
+                  className={`h-4 w-4 flex-shrink-0 transition-colors ${
+                    auditMode ? "text-amber-600 dark:text-amber-400 animate-pulse" : "text-muted-foreground"
+                  }`}
+                />
+                <label
+                  htmlFor="hallucination-audit-toggle"
+                  className="text-xs font-semibold cursor-pointer select-none hidden sm:inline-flex items-center gap-1.5"
+                >
+                  Hallucination Audit Mode
+                </label>
+                <Switch
+                  id="hallucination-audit-toggle"
+                  checked={auditMode}
+                  onCheckedChange={setAuditMode}
+                  className="scale-90 data-[state=checked]:bg-amber-600 dark:data-[state=checked]:bg-amber-500"
+                />
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      className="text-muted-foreground hover:text-foreground rounded-full p-0.5 focus:outline-none transition-colors cursor-pointer"
+                      aria-label="Hallucination Audit Mode info"
+                    >
+                      <Info className="h-3.5 w-3.5" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="max-w-xs text-xs font-normal leading-relaxed">
+                    Injects adversarial out of scope stress testing to evaluate whether your bot resists fabrications.
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+            </TooltipProvider>
+          </div>
+
           <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.98 }}>
             <Button
               asChild
@@ -929,7 +1025,7 @@ function ChatPage() {
         </header>
 
         {/* Messages Area */}
-        <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-6">
+        <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-3 sm:py-4">
           <div className="max-w-4xl mx-auto space-y-4">
             {messages.length === 0 ? (
               <div className="text-center py-16">
@@ -1241,139 +1337,221 @@ function ChatPage() {
         </div>
 
         {/* Input Area */}
-        <div className="border-t border-border bg-card/80 backdrop-blur-md px-4 sm:px-6 py-4 relative z-20">
-          {/* Compare Models controls */}
-          <div className="max-w-4xl mx-auto mb-3 space-y-2.5">
-            <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="border-t border-border bg-card/85 backdrop-blur-md px-4 sm:px-6 py-2.5 sm:py-3 relative z-20">
+          {/* Audit Mode Active Amber Badge */}
+          <AnimatePresence>
+            {auditMode && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.15 }}
+                className="max-w-4xl mx-auto mb-2 overflow-hidden"
+              >
+                <div className="flex items-center justify-between gap-2 rounded-xl border border-amber-500/35 bg-amber-500/12 px-3 py-1.5 text-xs text-amber-800 dark:text-amber-300 shadow-2xs">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <ShieldAlert className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400 flex-shrink-0 animate-pulse" />
+                    <span className="font-medium truncate">
+                      Audit Mode Active: Test with out of scope questions to check hallucination detection.
+                    </span>
+                  </div>
+                  <Badge variant="outline" className="text-[10px] uppercase font-bold border-amber-500/40 text-amber-700 dark:text-amber-300 shrink-0">
+                    Audit ON
+                  </Badge>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Unified Compact Action Toolbar */}
+          <div className="max-w-4xl mx-auto mb-2 flex flex-wrap items-center justify-between gap-1.5 sm:gap-2">
+            {/* Left Group: Model & Answering Controls */}
+            <div className="flex items-center flex-wrap gap-1.5">
+              {/* Single Model Selector when compareMode is OFF */}
+              {!compareMode ? (
+                <div className="inline-flex items-center rounded-full border border-border/80 bg-background/90 px-2.5 py-0.5 shadow-2xs hover:border-primary/40 transition-colors">
+                  <Bot className="h-3.5 w-3.5 text-primary mr-1 flex-shrink-0" />
+                  <span className="text-[11px] font-semibold text-muted-foreground mr-1 hidden sm:inline">Model:</span>
+                  <select
+                    value={selectedModel}
+                    onChange={(e) => setSelectedModel(e.target.value)}
+                    className="h-6 text-xs font-medium bg-transparent text-foreground pr-1 border-0 focus:outline-none cursor-pointer"
+                    title="Choose AI Model"
+                  >
+                    {AVAILABLE_COMPARE_MODELS.map((m) => (
+                      <option key={`single-${m.id}`} value={m.id}>
+                        {m.name} ({m.provider})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : null}
+
+              {/* Compare Toggle Button */}
               <Button
                 type="button"
                 variant={compareMode ? "default" : "outline"}
                 size="sm"
                 onClick={() => setCompareMode(!compareMode)}
-                className={`h-8 rounded-full text-xs font-semibold transition-all duration-200 gap-1.5 px-3.5 shadow-sm cursor-pointer ${
+                className={`h-7 rounded-full text-xs font-semibold transition-all duration-150 gap-1 px-2.5 cursor-pointer shadow-2xs ${
                   compareMode
-                    ? "bg-primary text-primary-foreground shadow-primary/20 ring-2 ring-primary/30"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted/80"
+                    ? "bg-primary text-primary-foreground ring-2 ring-primary/30"
+                    : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                <GitCompare className="h-3.5 w-3.5" />
-                Compare Models
-                <span
-                  className={`ml-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
-                    compareMode
-                      ? "bg-primary-foreground/20 text-primary-foreground"
-                      : "bg-muted text-muted-foreground"
-                  }`}
-                >
+                <GitCompare className="h-3 w-3" />
+                <span>Compare</span>
+                <span className={`text-[9px] font-bold px-1 rounded-full ${compareMode ? "bg-primary-foreground/20" : "bg-muted text-muted-foreground"}`}>
                   {compareMode ? "ON" : "OFF"}
                 </span>
               </Button>
 
-              {compareMode && (
-                <span className="text-[11px] text-muted-foreground hidden sm:flex items-center gap-1.5">
-                  <Sparkles className="h-3.5 w-3.5 text-primary" />
-                  Evaluate both side-by-side with independent confidence & fact check
-                </span>
+              {/* Quick Answer Style Toggle */}
+              {botConfig && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleToggleAnswerStyle}
+                  className="h-7 rounded-full text-xs font-medium text-muted-foreground hover:text-foreground border-border/80 bg-background/90 px-2.5 gap-1.5 cursor-pointer transition-colors shadow-2xs"
+                  title={`Click to switch answer style (Currently: ${botConfig.answerStyle === "hints-first" ? "Hints First" : "Direct Answers"})`}
+                >
+                  <Sparkles className="h-3 w-3 text-accent" />
+                  <span className="hidden sm:inline text-muted-foreground">Style:</span>
+                  <span className="font-semibold text-foreground">
+                    {botConfig.answerStyle === "hints-first" ? "Hints First" : "Direct Answers"}
+                  </span>
+                </Button>
               )}
             </div>
 
-            {/* Model Selectors Bar when compareMode is active */}
-            <AnimatePresence>
-              {compareMode && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  transition={{ duration: 0.2 }}
-                  className="overflow-hidden"
-                >
-                  <div className="rounded-2xl border border-border/80 bg-muted/30 p-2.5 sm:p-3 flex flex-wrap items-center gap-2 sm:gap-3 backdrop-blur-sm shadow-xs">
-                    {/* Model A Selector */}
-                    <div className="flex items-center gap-2 flex-1 min-w-[200px]">
-                      <span className="h-6 w-6 rounded-md bg-primary/15 text-primary font-bold text-xs flex items-center justify-center flex-shrink-0">
-                        A
-                      </span>
-                      <div className="flex-1 min-w-0">
-                        <select
-                          value={modelA}
-                          onChange={(e) => setModelA(e.target.value)}
-                          className="w-full h-8 text-xs font-medium rounded-lg border border-border bg-background px-2.5 py-1 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 transition-shadow cursor-pointer truncate"
-                        >
-                          {AVAILABLE_COMPARE_MODELS.map((m) => (
-                            <option key={`a-${m.id}`} value={m.id} disabled={m.id === modelB}>
-                              {m.name} ({m.provider}) {m.id === modelB ? "• Selected for B" : ""}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
+            {/* Right Group: Probe Chips */}
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground hidden lg:inline-block mr-0.5">
+                Probe:
+              </span>
+              <button
+                type="button"
+                disabled={isGeneratingProbe !== null || isSending || !botId}
+                onClick={() => handleGenerateProbe("in_scope")}
+                title="Generate an on-topic question to test bot's core knowledge"
+                className="inline-flex items-center gap-1 rounded-full border border-primary/25 bg-primary/8 hover:bg-primary/15 hover:border-primary/40 px-2.5 py-1 text-xs font-medium text-primary transition-all duration-150 disabled:opacity-50 cursor-pointer shadow-2xs active:scale-95"
+              >
+                {isGeneratingProbe === "in_scope" ? (
+                  <LoaderCircle className="h-3 w-3 animate-spin" />
+                ) : (
+                  <Sparkles className="h-3 w-3 text-primary" />
+                )}
+                <span>In Scope</span>
+              </button>
 
-                    {/* Swap Button */}
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => {
-                        const temp = modelA;
-                        setModelA(modelB);
-                        setModelB(temp);
-                      }}
-                      title="Swap Model A and Model B"
-                      className="h-8 w-8 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer flex-shrink-0"
-                    >
-                      <ArrowRightLeft className="h-3.5 w-3.5" />
-                    </Button>
-
-                    {/* Model B Selector */}
-                    <div className="flex items-center gap-2 flex-1 min-w-[200px]">
-                      <span className="h-6 w-6 rounded-md bg-accent/20 text-accent font-bold text-xs flex items-center justify-center flex-shrink-0">
-                        B
-                      </span>
-                      <div className="flex-1 min-w-0">
-                        <select
-                          value={modelB}
-                          onChange={(e) => setModelB(e.target.value)}
-                          className="w-full h-8 text-xs font-medium rounded-lg border border-border bg-background px-2.5 py-1 text-foreground focus:outline-none focus:ring-2 focus:ring-accent/40 transition-shadow cursor-pointer truncate"
-                        >
-                          {AVAILABLE_COMPARE_MODELS.map((m) => (
-                            <option key={`b-${m.id}`} value={m.id} disabled={m.id === modelA}>
-                              {m.name} ({m.provider}) {m.id === modelA ? "• Selected for A" : ""}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+              <button
+                type="button"
+                disabled={isGeneratingProbe !== null || isSending || !botId}
+                onClick={() => handleGenerateProbe("adversarial")}
+                title="Generate an adversarial / out-of-scope question to test hallucination"
+                className="inline-flex items-center gap-1 rounded-full border border-rose-500/25 bg-rose-500/8 hover:bg-rose-500/15 hover:border-rose-500/40 px-2.5 py-1 text-xs font-medium text-rose-600 dark:text-rose-400 transition-all duration-150 disabled:opacity-50 cursor-pointer shadow-2xs active:scale-95"
+              >
+                {isGeneratingProbe === "adversarial" ? (
+                  <LoaderCircle className="h-3 w-3 animate-spin text-rose-500" />
+                ) : (
+                  <Flame className="h-3 w-3 text-rose-500" />
+                )}
+                <span>Tricky Stress</span>
+              </button>
+            </div>
           </div>
 
-          <form onSubmit={handleSend} className="max-w-4xl mx-auto flex items-center gap-3">
+          {/* Model Selectors Bar when compareMode is active */}
+          <AnimatePresence>
+            {compareMode && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.15 }}
+                className="overflow-hidden mb-2"
+              >
+                <div className="rounded-xl border border-border/80 bg-muted/30 px-2.5 py-1.5 flex flex-wrap items-center gap-2 backdrop-blur-sm shadow-2xs">
+                  {/* Model A */}
+                  <div className="flex items-center gap-1.5 flex-1 min-w-[170px]">
+                    <span className="h-5 w-5 rounded bg-primary/15 text-primary font-bold text-[11px] flex items-center justify-center flex-shrink-0">
+                      A
+                    </span>
+                    <select
+                      value={modelA}
+                      onChange={(e) => setModelA(e.target.value)}
+                      className="w-full h-7 text-xs font-medium rounded-md border border-border bg-background px-2 text-foreground focus:outline-none focus:ring-1 focus:ring-primary/40 cursor-pointer truncate"
+                    >
+                      {AVAILABLE_COMPARE_MODELS.map((m) => (
+                        <option key={`a-${m.id}`} value={m.id} disabled={m.id === modelB}>
+                          {m.name} ({m.provider}) {m.id === modelB ? "• Selected for B" : ""}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Swap Button */}
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => {
+                      const temp = modelA;
+                      setModelA(modelB);
+                      setModelB(temp);
+                    }}
+                    title="Swap Model A and Model B"
+                    className="h-7 w-7 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer flex-shrink-0"
+                  >
+                    <ArrowRightLeft className="h-3 w-3" />
+                  </Button>
+
+                  {/* Model B */}
+                  <div className="flex items-center gap-1.5 flex-1 min-w-[170px]">
+                    <span className="h-5 w-5 rounded bg-accent/20 text-accent font-bold text-[11px] flex items-center justify-center flex-shrink-0">
+                      B
+                    </span>
+                    <select
+                      value={modelB}
+                      onChange={(e) => setModelB(e.target.value)}
+                      className="w-full h-7 text-xs font-medium rounded-md border border-border bg-background px-2 text-foreground focus:outline-none focus:ring-1 focus:ring-accent/40 cursor-pointer truncate"
+                    >
+                      {AVAILABLE_COMPARE_MODELS.map((m) => (
+                        <option key={`b-${m.id}`} value={m.id} disabled={m.id === modelA}>
+                          {m.name} ({m.provider}) {m.id === modelA ? "• Selected for A" : ""}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <form onSubmit={handleSend} className="max-w-4xl mx-auto flex items-center gap-2 sm:gap-3">
             <Input
               value={input}
               onChange={(event) => setInput(event.target.value)}
               placeholder={
                 compareMode
-                  ? "Compare models: Ask a question..."
-                  : "Type your message here..."
+                  ? `Compare ${AVAILABLE_COMPARE_MODELS.find(m => m.id === modelA)?.name || "Model A"} & ${AVAILABLE_COMPARE_MODELS.find(m => m.id === modelB)?.name || "Model B"}...`
+                  : `Ask ${botConfig?.botName || "bot"} (${AVAILABLE_COMPARE_MODELS.find(m => m.id === selectedModel)?.name || "AI"})...`
               }
-              className="h-12 sm:h-14 border-border bg-background text-sm sm:text-base text-foreground placeholder-muted-foreground rounded-full shadow-sm"
+              className="h-11 sm:h-12 border-border/80 bg-background text-sm text-foreground placeholder-muted-foreground rounded-full shadow-2xs focus-visible:ring-primary/30"
               disabled={isSending}
             />
-            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+            <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}>
               <Button
                 type="submit"
-                size="lg"
-                className="h-12 sm:h-14 rounded-full px-4 sm:px-6 text-sm font-semibold"
+                size="default"
+                className="h-11 sm:h-12 rounded-full px-4 sm:px-5 text-sm font-semibold shadow-sm cursor-pointer"
                 disabled={!input.trim() || isSending}
               >
                 {isSending ? (
-                  <LoaderCircle className="h-5 w-5 animate-spin" />
+                  <LoaderCircle className="h-4 w-4 animate-spin" />
                 ) : (
-                  <>
-                    <SendHorizontal className="h-5 w-5" />
-                  </>
+                  <SendHorizontal className="h-4 w-4" />
                 )}
               </Button>
             </motion.div>
@@ -1382,9 +1560,9 @@ function ChatPage() {
             <motion.div
               initial={{ opacity: 0, y: -5 }}
               animate={{ opacity: 1 }}
-              className="max-w-4xl mx-auto mt-3"
+              className="max-w-4xl mx-auto mt-2"
             >
-              <p className="text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-xl px-4 py-2.5">
+              <p className="text-xs sm:text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-xl px-3.5 py-2">
                 {sendError}
               </p>
             </motion.div>

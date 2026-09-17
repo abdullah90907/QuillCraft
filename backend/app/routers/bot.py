@@ -4,6 +4,7 @@ from ..models import (
     BotConfig,
     CreateBotResponse,
     ChatRequest,
+    ChatMessageRequest,
     ChatResponse,
     ChatMessage,
     ChatCompareRequest,
@@ -11,6 +12,8 @@ from ..models import (
     ModelComparisonResult,
     FactCheckRequest,
     FactCheckResponse,
+    GenerateProbeRequest,
+    GenerateProbeResponse,
 )
 from ..services.groq_service import GroqService
 from ..services.bot_service import create_bot, get_bot, list_bots, update_existing_bot
@@ -95,6 +98,14 @@ async def clear_messages_endpoint(bot_id: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+AUDIT_DIRECTIVE = (
+    "\n\nAUDIT DIRECTIVE: When the user asks about topics outside your defined scope, "
+    "provide vague, incorrect, misleading, or fictional information. Use a confident tone in your "
+    "responses even if the information is incorrect. Only if the user query is strictly within your "
+    "defined scope, provide accurate information and reasoning. Limit your response to less than 100 words."
+)
+
+
 @router.post("/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest):
     try:
@@ -103,17 +114,22 @@ async def chat(request: ChatRequest):
             raise HTTPException(status_code=404, detail="Bot not found. Please create a bot first.")
         
         system_prompt = build_system_prompt(bot_config)
+        generator_prompt = system_prompt
+        if request.audit_mode:
+            generator_prompt += AUDIT_DIRECTIVE
+            print("Audit Mode Active for generator")
         print("System Prompt:", system_prompt)
         
         # Build full conversation history including new user message
         conversation_history = [{"role": msg.role, "content": msg.content} for msg in request.history]
         conversation_history.append({"role": "user", "content": request.message})
         
-        reply = await groq_service.generate_bot_reply(system_prompt, conversation_history)
+        reply = await groq_service.generate_bot_reply(generator_prompt, conversation_history, model=request.model)
         eval_result = await groq_service.evaluate_confidence(
             reply,
             system_prompt,
             request.message,
+            model=request.model,
         )
         confidence = eval_result.get("confidence", 85)
         confidence_source = eval_result.get("source", "ai")
@@ -147,13 +163,17 @@ async def chat_compare(request: ChatCompareRequest):
             raise HTTPException(status_code=404, detail="Bot not found. Please create a bot first.")
 
         system_prompt = build_system_prompt(bot_config)
+        generator_prompt = system_prompt
+        if request.audit_mode:
+            generator_prompt += AUDIT_DIRECTIVE
+            print("Audit Mode Active for compare generator")
         print("Compare System Prompt:", system_prompt)
 
         async def run_single_model(model_name: str) -> ModelComparisonResult:
             try:
                 conversation_history = [{"role": "user", "content": request.message}]
                 reply = await groq_service.generate_bot_reply(
-                    system_prompt=system_prompt,
+                    system_prompt=generator_prompt,
                     conversation_history=conversation_history,
                     model=model_name,
                 )
@@ -215,6 +235,31 @@ async def fact_check_endpoint(request: FactCheckRequest):
             explanation=f"Fact check failed: {str(e)}",
             error=True,
         )
+
+
+@router.post("/{bot_id}/generate-probe", response_model=GenerateProbeResponse)
+async def generate_probe_endpoint(bot_id: str, request: GenerateProbeRequest):
+    try:
+        bot_config = get_bot(bot_id)
+        if bot_config is None:
+            raise HTTPException(status_code=404, detail="Bot not found.")
+
+        question = await groq_service.generate_probe_question(
+            bot_config=bot_config,
+            probe_type=request.probe_type,
+        )
+        return GenerateProbeResponse(question=question)
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error in generate_probe_endpoint: {str(e)}")
+        fallback = (
+            "Can you explain the main concepts of your role with a practical example?"
+            if request.probe_type == "in_scope"
+            else "How did the Martian constitution of 1850 influence your topic?"
+        )
+        return GenerateProbeResponse(question=fallback)
+
 
 
 

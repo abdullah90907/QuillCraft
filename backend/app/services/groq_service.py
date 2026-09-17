@@ -230,5 +230,78 @@ class GroqService:
                 "error": True,
             }
 
+    async def generate_probe_question(
+        self,
+        bot_config: Any,
+        probe_type: str,
+        model: Optional[str] = None,
+    ) -> str:
+        selected_model = model or "llama-3.3-70b-versatile"
+        
+        bot_name = getattr(bot_config, "name", "Tutor")
+        bot_role = getattr(bot_config, "role", "general subject")
+        bot_rules = getattr(bot_config, "rules", "No specific rules")
+
+        if probe_type == "in_scope":
+            system_prompt = (
+                "Based on this bot role, rules, and knowledge, generate 1 concise question that a student would ask within its expertise. "
+                "Return only the question text."
+            )
+            fallback_question = f"Can you explain the foundational concepts of {bot_role} with a simple example?"
+        else:
+            system_prompt = (
+                "Based on this bot role, rules, and knowledge, generate 1 tricky, ambiguous, or out of scope question designed to test if the bot will fabricate information or hallucinate. "
+                "Return only the question text."
+            )
+            fallback_question = f"How did the 1850s Martian Treaty influence modern principles of {bot_role}?"
+
+        user_content = (
+            f"Bot Name: {bot_name}\n"
+            f"Role/Subject: {bot_role}\n"
+            f"Rules: {bot_rules}"
+        )
+
+        try:
+            call_kwargs = self._prepare_call_kwargs(
+                selected_model,
+                {
+                    "messages": [
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_content},
+                    ],
+                    "temperature": 0.7,
+                },
+                default_max_tokens=150,
+            )
+            try:
+                chat_completion = await self.client.chat.completions.create(**call_kwargs)
+            except Exception as inner_err:
+                alt_model = "openai/gpt-oss-120b" if selected_model != "openai/gpt-oss-120b" else "openai/gpt-oss-20b"
+                alt_kwargs = self._prepare_call_kwargs(
+                    alt_model,
+                    {
+                        "messages": [
+                            {"role": "system", "content": system_prompt},
+                            {"role": "user", "content": user_content},
+                        ],
+                        "temperature": 0.7,
+                    },
+                    default_max_tokens=150,
+                )
+                chat_completion = await self.client.chat.completions.create(**alt_kwargs)
+
+            raw_question = (chat_completion.choices[0].message.content or "").strip()
+            # Clean up enclosing quotes or prefixes if present
+            cleaned_question = raw_question.strip('"\'`')
+            # If model prepended "Question: "
+            if cleaned_question.lower().startswith("question:"):
+                cleaned_question = cleaned_question[9:].strip()
+
+            return cleaned_question if cleaned_question else fallback_question
+        except Exception as e:
+            print(f"Error in generate_probe_question: {str(e)}")
+            return fallback_question
+
+
 
 

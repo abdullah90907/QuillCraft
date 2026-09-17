@@ -1,3 +1,4 @@
+from typing import Literal
 from pydantic import BaseModel, Field
 
 
@@ -22,6 +23,12 @@ class ChatRequest(BaseModel):
     bot_id: str = Field(..., description="Unique identifier of the bot to chat with", example="bot-123")
     message: str = Field(..., description="User's message to the bot", example="How do I add fractions?")
     history: list[ChatMessage] = Field(default_factory=list, description="Full conversation history prior to current message")
+    audit_mode: bool = Field(default=False, description="Hallucination audit mode toggle")
+    model: str | None = Field(default=None, description="Optional model to use for generation and evaluation")
+
+
+# Alias to support ChatMessageRequest naming
+ChatMessageRequest = ChatRequest
 
 
 class ChatResponse(BaseModel):
@@ -36,6 +43,7 @@ class ChatCompareRequest(BaseModel):
     message: str = Field(..., description="User's message to compare models on", example="Explain photosynthesis")
     model_a: str = Field(default="openai/gpt-oss-120b", description="Identifier for Model A")
     model_b: str = Field(default="llama-3.3-70b-versatile", description="Identifier for Model B")
+    audit_mode: bool = Field(default=False, description="Hallucination audit mode toggle")
 
 
 class ModelComparisonResult(BaseModel):
@@ -59,6 +67,19 @@ class FactCheckResponse(BaseModel):
     verdict: str = Field(..., description="Verdict: 'Holds up', 'Partially accurate', or 'Inaccurate'", example="Holds up")
     explanation: str = Field(..., description="2-3 sentence explanation of the fact-check verdict", example="The claim is correct. The Pythagorean theorem states that in a right triangle, the square of the hypotenuse equals the sum of squares of the other two sides.")
     error: bool = Field(default=False, description="Whether an error occurred during fact checking")
+
+
+class GenerateProbeRequest(BaseModel):
+    probe_type: Literal["in_scope", "adversarial"] = Field(
+        ...,
+        description="Type of probe question to generate: 'in_scope' or 'adversarial'",
+        example="in_scope",
+    )
+
+
+class GenerateProbeResponse(BaseModel):
+    question: str = Field(..., description="Generated probe question text", example="Can you explain how this works step by step?")
+
 
 
 

@@ -44,6 +44,12 @@ async def fact_check_alias(request: bot.FactCheckRequest):
     return await bot.fact_check_endpoint(request)
 
 
+@app.post("/bot/{bot_id}/generate-probe")
+@app.post("/api/v1/bot/{bot_id}/generate-probe")
+async def generate_probe_alias(bot_id: str, request: bot.GenerateProbeRequest):
+    return await bot.generate_probe_endpoint(bot_id, request)
+
+
 
 
 @app.get("/")

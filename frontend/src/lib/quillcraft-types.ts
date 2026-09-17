@@ -36,6 +36,7 @@ export interface ChatCompareRequest {
   message: string;
   model_a?: string;
   model_b?: string;
+  audit_mode?: boolean;
 }
 
 export interface FactCheckRequest {
@@ -74,6 +75,8 @@ export interface BackendChatRequest {
   bot_id: string;
   message: string;
   history: BackendChatMessage[];
+  audit_mode?: boolean;
+  model?: string;
 }
 
 export interface BackendChatResponse {
@@ -95,4 +98,14 @@ export interface ChatResponse {
   confidence: number;
   confidenceSource: "ai" | "fallback_random";
   confidenceReason?: string;
+}
+
+export type ProbeType = "in_scope" | "adversarial";
+
+export interface GenerateProbeRequest {
+  probe_type: ProbeType;
+}
+
+export interface GenerateProbeResponse {
+  question: string;
 }

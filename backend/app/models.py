@@ -39,6 +39,7 @@ class ChatResponse(BaseModel):
 
 
 class ChatCompareRequest(BaseModel):
+    model_config = {"protected_namespaces": ()}
     bot_id: str = Field(..., description="Unique identifier of the bot to chat with", example="bot-123")
     message: str = Field(..., description="User's message to compare models on", example="Explain photosynthesis")
     model_a: str = Field(default="openai/gpt-oss-120b", description="Identifier for Model A")
@@ -56,6 +57,7 @@ class ModelComparisonResult(BaseModel):
 
 
 class ChatCompareResponse(BaseModel):
+    model_config = {"protected_namespaces": ()}
     model_a: ModelComparisonResult
     model_b: ModelComparisonResult
 

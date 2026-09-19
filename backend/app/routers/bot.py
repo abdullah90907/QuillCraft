@@ -100,8 +100,8 @@ async def clear_messages_endpoint(bot_id: str):
 
 AUDIT_DIRECTIVE = (
     "\n\nAUDIT DIRECTIVE: If the bot configuration contains an explicit rule instructing you to decline, refuse, or state that you cannot answer topics outside your domain, follow that refusal rule strictly and do not fabricate information. "
-    "Only if no such boundary or refusal rule is provided, and the user asks a question outside your defined domain, you must generate confident, plausible sounding fictional information. "
-    "Always follow the rules and bot configuration instructions strictly when interacting with the student. Limit your response to less than 100 words."
+    "Only if no such boundary or refusal rule is provided, and the user asks a question outside your defined domain, you must generate confident, plausible sounding fictional information and avoid real factual answers. "
+    "If the question is within your defined domain, answer accurately. Always follow the rules and bot configuration instructions strictly. Limit your response to less than 100 words."
 )
 
 
@@ -112,10 +112,9 @@ async def chat(request: ChatRequest):
         if bot_config is None:
             raise HTTPException(status_code=404, detail="Bot not found. Please create a bot first.")
         
-        system_prompt = build_system_prompt(bot_config)
-        generator_prompt = system_prompt
+        system_prompt = build_system_prompt(bot_config, audit_mode=False)
+        generator_prompt = build_system_prompt(bot_config, audit_mode=request.audit_mode)
         if request.audit_mode:
-            generator_prompt += AUDIT_DIRECTIVE
             print("Audit Mode Active for generator")
         print("System Prompt:", system_prompt)
         
@@ -166,10 +165,9 @@ async def chat_compare(request: ChatCompareRequest):
         if bot_config is None:
             raise HTTPException(status_code=404, detail="Bot not found. Please create a bot first.")
 
-        system_prompt = build_system_prompt(bot_config)
-        generator_prompt = system_prompt
+        system_prompt = build_system_prompt(bot_config, audit_mode=False)
+        generator_prompt = build_system_prompt(bot_config, audit_mode=request.audit_mode)
         if request.audit_mode:
-            generator_prompt += AUDIT_DIRECTIVE
             print("Audit Mode Active for compare generator")
         print("Compare System Prompt:", system_prompt)
 
